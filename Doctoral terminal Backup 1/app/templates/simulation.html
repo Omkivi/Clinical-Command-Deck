@@ -1,0 +1,973 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="h-full flex flex-col gap-4">
+    <h1 class="text-xl font-bold text-white uppercase tracking-wider">Advanced Clinical Simulation & Safety Analysis
+    </h1>
+
+    <div class="grid grid-cols-12 gap-4 flex-1 overflow-hidden">
+        <!-- Left Panel: Configuration -->
+        <div
+            class="col-span-4 bg-white/5 border border-terminal-border p-4 rounded flex flex-col gap-4  overflow-y-auto">
+            <h2 class="text-terminal-green font-bold text-sm tracking-wider border-b border-terminal-border pb-2">
+                SCENARIO CONFIGURATION</h2>
+
+            {% if patient %}
+            <div class="bg-black/40 p-3 rounded border border-terminal-border">
+                <div class="text-xs text-gray-500">SELECTED PATIENT</div>
+                <div class="text-white font-bold">{{ patient.name }}</div>
+                <div class="text-xs text-gray-400 mt-1">ID: #{{ patient.id }} | {{ patient.condition }}</div>
+                <div class="text-xs text-gray-400">Age: {{ patient.age }} years</div>
+            </div>
+
+            <!-- Patient Safety Profile -->
+            <div class="bg-black/40 p-3 rounded border border-terminal-border">
+                <div class="text-xs text-gray-500 mb-2">PATIENT SAFETY PROFILE</div>
+
+                <div class="space-y-2 text-xs">
+                    <div>
+                        <span class="text-gray-500">Allergies:</span>
+                        <span class="text-white ml-1">
+                            {% if patient.allergies %}
+                            {{ patient.allergies|join(', ') }}
+                            {% else %}
+                            None reported
+                            {% endif %}
+                        </span>
+                    </div>
+
+                    <div>
+                        <span class="text-gray-500">Current Medications:</span>
+                        <div class="mt-1 space-y-1">
+                            {% if patient.current_medications %}
+                            {% for med in patient.current_medications[:5] %}
+                            <div class="text-white">💊 {{ med.name if med.name else med }}</div>
+                            {% endfor %}
+                            {% if patient.current_medications|length > 5 %}
+                            <div class="text-gray-400">+ {{ patient.current_medications|length - 5 }} more</div>
+                            {% endif %}
+                            {% else %}
+                            <div class="text-white">None</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div>
+                        <span class="text-gray-500">Renal Function:</span>
+                        <span class="text-white ml-1">{{ patient.vitals.renal_function if patient.vitals and
+                            patient.vitals.renal_function else patient.renal_function if patient.renal_function else
+                            'Normal' }}</span>
+                    </div>
+
+                    <div>
+                        <span class="text-gray-500">Hepatic Function:</span>
+                        <span class="text-white ml-1">{{ patient.vitals.hepatic_function if patient.vitals and
+                            patient.vitals.hepatic_function else patient.hepatic_function if patient.hepatic_function
+                            else 'Normal' }}</span>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="bg-red-500/10 p-3 rounded border border-red-500/30 text-red-400 text-sm">
+                NO PATIENT SELECTED. PLEASE SELECT FROM DIRECTORY.
+            </div>
+            {% endif %}
+
+            <form id="simForm" class="flex flex-col gap-4">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">INTERVENTION / DRUG</label>
+                    <input type="text" name="drug" placeholder="e.g. Lisinopril, Metformin"
+                        class="w-full bg-black border border-terminal-border px-3 py-2 text-white focus:border-terminal-green outline-none rounded">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">DOSAGE / FREQUENCY</label>
+                    <input type="text" name="dosage" placeholder="e.g. 10mg Daily"
+                        class="w-full bg-black border border-terminal-border px-3 py-2 text-white focus:border-terminal-green outline-none rounded">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">INTERVENTION DURATION</label>
+                    <select name="duration"
+                        class="w-full bg-black border border-terminal-border px-3 py-2 text-white focus:border-terminal-green outline-none rounded">
+                        <option value="1 week">1 Week</option>
+                        <option value="2 weeks">2 Weeks</option>
+                        <option value="4 weeks" selected>4 Weeks (1 Month)</option>
+                        <option value="6 weeks">6 Weeks</option>
+                        <option value="8 weeks">8 Weeks (2 Months)</option>
+                        <option value="12 weeks">12 Weeks (3 Months)</option>
+                        <option value="24 weeks">24 Weeks (6 Months)</option>
+                        <option value="indefinite">Indefinite / Long-term</option>
+                    </select>
+                </div>
+
+                <button type="submit"
+                    class="mt-2 bg-terminal-green text-black font-bold py-2 rounded hover:bg-green-400 transition flex justify-center items-center gap-2">
+                    <i data-lucide="shield-check" class="w-4 h-4"></i> ANALYZE & SIMULATE
+                </button>
+            </form>
+        </div>
+
+        <!-- Right Panel: Results -->
+        <div class="col-span-8 bg-black/40 border border-terminal-border p-4 rounded relative overflow-y-auto">
+            <div id="simPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center text-gray-600">
+                <i data-lucide="activity" class="w-16 h-16 mb-4 opacity-20"></i>
+                <p>AWAITING INPUT - CONFIGURE AND ANALYZE</p>
+            </div>
+
+            <div id="simLoading"
+                class="hidden absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-10">
+                <div class="animate-spin text-terminal-green mb-2">
+                    <i data-lucide="loader-2" class="w-8 h-8"></i>
+                </div>
+                <p class="text-terminal-green animate-pulse">RUNNING COMPREHENSIVE SAFETY ANALYSIS...</p>
+            </div>
+
+            <div id="simResults" class="hidden flex flex-col gap-4">
+                <!-- Header with Outcome - Terminal Theme -->
+                <div class="flex justify-between items-center border-b border-terminal-border pb-3">
+                    <h2 class="text-terminal-green font-bold text-sm tracking-wider flex items-center gap-2">
+                        <i data-lucide="shield-check" class="w-5 h-5"></i>
+                        SIMULATION RESULTS
+                    </h2>
+                    <div class="flex items-center gap-3">
+                        <span id="resDuration"
+                            class="px-3 py-1 rounded text-xs bg-black/40 text-cyan-400 border border-terminal-border flex items-center gap-2">
+                            <i data-lucide="clock" class="w-3 h-3"></i>
+                            <span></span>
+                        </span>
+                        <span id="resOutcome"
+                            class="px-4 py-1 rounded text-xs font-bold uppercase tracking-wider"></span>
+                    </div>
+                </div>
+
+                <!-- Score Gauges - Terminal Theme with Radial Progress -->
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- Efficacy Score Gauge -->
+                    <div class="bg-black/40 rounded border border-terminal-border p-4">
+                        <div class="flex items-center gap-5">
+                            <!-- Radial Gauge -->
+                            <div class="relative w-24 h-24 flex-shrink-0">
+                                <svg class="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
+                                    <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.08)"
+                                        stroke-width="8" />
+                                    <circle id="efficacyCircle" cx="50" cy="50" r="40" fill="none"
+                                        stroke="url(#efficacyGradient)" stroke-width="8" stroke-linecap="round"
+                                        stroke-dasharray="251.2" stroke-dashoffset="251.2"
+                                        class="transition-all duration-1000 ease-out" />
+                                    <defs>
+                                        <linearGradient id="efficacyGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                            <stop offset="0%" stop-color="#eab308" />
+                                            <stop offset="100%" stop-color="#22c55e" />
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+                                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                    <span id="resEfficacy" class="text-2xl font-bold text-white">--</span>
+                                    <span class="text-xs text-gray-600">/ 100</span>
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="text-xs text-gray-500 mb-1">EFFICACY SCORE</div>
+                                <div class="text-sm text-white font-semibold mb-2">Treatment Effectiveness</div>
+                                <div id="resEfficacyBar" class="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-terminal-green transition-all duration-1000 ease-out"
+                                        style="width: 0%"></div>
+                                </div>
+                                <div id="efficacyLabel" class="text-xs text-terminal-green mt-2">Calculating...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Safety Score Gauge -->
+                    <div class="bg-black/40 rounded border border-terminal-border p-4">
+                        <div class="flex items-center gap-5">
+                            <!-- Radial Gauge -->
+                            <div class="relative w-24 h-24 flex-shrink-0">
+                                <svg class="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
+                                    <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.08)"
+                                        stroke-width="8" />
+                                    <circle id="safetyCircle" cx="50" cy="50" r="40" fill="none"
+                                        stroke="url(#safetyGradient)" stroke-width="8" stroke-linecap="round"
+                                        stroke-dasharray="251.2" stroke-dashoffset="251.2"
+                                        class="transition-all duration-1000 ease-out" />
+                                    <defs>
+                                        <linearGradient id="safetyGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                            <stop offset="0%" stop-color="#10b981" />
+                                            <stop offset="100%" stop-color="#22c55e" />
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+                                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                    <span id="resSafety" class="text-2xl font-bold text-white">--</span>
+                                    <span class="text-xs text-gray-600">/ 100</span>
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="text-xs text-gray-500 mb-1">SAFETY SCORE</div>
+                                <div class="text-sm text-white font-semibold mb-2">Patient Safety Profile</div>
+                                <div id="resSafetyBar" class="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-cyan-500 transition-all duration-1000 ease-out"
+                                        style="width: 0%"></div>
+                                </div>
+                                <div id="safetyLabel" class="text-xs text-cyan-400 mt-2">Calculating...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Overall Risk Assessment - Terminal Theme -->
+                <div id="resRiskContainer" class="bg-black/40 rounded border border-terminal-border p-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div id="riskIconContainer"
+                                class="w-14 h-14 rounded-xl flex items-center justify-center bg-terminal-green/20 border border-terminal-green/30">
+                                <i data-lucide="shield" class="w-7 h-7 text-terminal-green"></i>
+                            </div>
+                            <div>
+                                <div class="text-xs text-gray-500 mb-1">OVERALL RISK ASSESSMENT</div>
+                                <div id="resRisk" class="text-2xl font-bold text-terminal-green">LOW</div>
+                                <div id="resClinicalRecommendation" class="text-sm text-gray-300 mt-1 max-w-lg"></div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-center gap-1">
+                            <div id="resCanPrescribe" class="text-4xl"></div>
+                            <div id="prescribeLabel" class="text-xs text-gray-500 uppercase">Status</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weight-Based Dosing Recommendation (shown when dosage is suboptimal) -->
+                <div id="dosingRecommendationSection"
+                    class="hidden bg-cyan-500/10 border border-cyan-500/30 rounded p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i data-lucide="scale" class="w-5 h-5 text-cyan-400"></i>
+                        <span class="text-cyan-400 font-bold text-sm">WEIGHT-BASED DOSING RECOMMENDATION</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-black/40 p-3 rounded">
+                            <div class="text-xs text-gray-500">PATIENT WEIGHT</div>
+                            <div id="dosingPatientWeight" class="text-lg text-white font-mono">-- kg</div>
+                        </div>
+                        <div class="bg-black/40 p-3 rounded">
+                            <div class="text-xs text-gray-500">RECOMMENDED DOSE</div>
+                            <div id="dosingRecommendedDose" class="text-lg text-cyan-400 font-mono font-bold">-- mg
+                            </div>
+                        </div>
+                    </div>
+                    <div id="dosingNote" class="mt-3 text-xs text-cyan-300"></div>
+                    <div id="dosingRenalWarning"
+                        class="hidden mt-2 text-xs text-yellow-400 bg-yellow-900/20 border border-yellow-500/30 rounded p-2">
+                    </div>
+                </div>
+
+                <!-- Pharmacogenomics Alert (shown when drug-gene interaction detected) -->
+                <div id="pgxAlertSection" class="hidden bg-purple-500/10 border border-purple-500/30 rounded p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i data-lucide="dna" class="w-5 h-5 text-purple-400"></i>
+                        <span class="text-purple-400 font-bold text-sm">PHARMACOGENOMIC ALERT</span>
+                    </div>
+                    <div id="pgxAlertContent" class="space-y-2"></div>
+                </div>
+
+                <!-- Safety Alerts Section -->
+                <div id="safetyAlertsContainer" class="hidden">
+                    <!-- Critical Alerts -->
+                    <div id="criticalAlertsSection" class="hidden bg-red-500/10 border border-red-500/30 rounded p-4">
+                        <div class="flex items-center gap-2 mb-3">
+                            <i data-lucide="alert-triangle" class="w-5 h-5 text-red-500"></i>
+                            <span class="text-red-500 font-bold text-sm">CRITICAL ALERTS</span>
+                        </div>
+                        <div id="criticalAlertsList" class="space-y-2"></div>
+                    </div>
+
+                    <!-- Major Warnings -->
+                    <div id="majorWarningsSection"
+                        class="hidden bg-orange-500/10 border border-orange-500/30 rounded p-4 mt-3">
+                        <div class="flex items-center gap-2 mb-3">
+                            <i data-lucide="alert-circle" class="w-5 h-5 text-orange-500"></i>
+                            <span class="text-orange-500 font-bold text-sm">MAJOR WARNINGS</span>
+                        </div>
+                        <div id="majorWarningsList" class="space-y-2"></div>
+                    </div>
+
+                    <!-- Moderate Warnings -->
+                    <div id="moderateWarningsSection"
+                        class="hidden bg-yellow-500/10 border border-yellow-500/30 rounded p-4 mt-3">
+                        <div class="flex items-center gap-2 mb-3">
+                            <i data-lucide="info" class="w-5 h-5 text-yellow-500"></i>
+                            <span class="text-yellow-500 font-bold text-sm">MODERATE WARNINGS</span>
+                        </div>
+                        <div id="moderateWarningsList" class="space-y-2"></div>
+                    </div>
+                </div>
+
+                <!-- Clinical Analysis -->
+                <div class="bg-white/5 p-4 rounded border border-terminal-border">
+                    <div class="text-xs text-gray-500 mb-2">CLINICAL ANALYSIS</div>
+                    <p id="resDetails" class="text-gray-300 leading-relaxed"></p>
+                </div>
+
+                <!-- AI Interpretation (if available) -->
+                <div id="aiInterpretationSection" class="hidden bg-blue-500/10 border border-blue-500/30 rounded p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i data-lucide="sparkles" class="w-4 h-4 text-blue-400"></i>
+                        <span class="text-blue-400 font-bold text-xs">AI CLINICAL INTERPRETATION</span>
+                    </div>
+                    <p id="aiInterpretation" class="text-gray-300 text-sm leading-relaxed"></p>
+                </div>
+
+                <!-- Patient Factors Considered -->
+                <div class="bg-white/5 p-4 rounded border border-terminal-border">
+                    <div class="text-xs text-gray-500 mb-2">PATIENT FACTORS ANALYZED</div>
+                    <div id="patientFactors" class="grid grid-cols-2 gap-2 text-xs text-gray-300"></div>
+                </div>
+
+                <!-- Predicted Vitals Impact -->
+                <div class="bg-white/5 p-4 rounded border border-terminal-border">
+                    <div class="text-xs text-gray-500 mb-2">PREDICTED VITAL SIGNS CHANGES</div>
+                    <div id="resVitals" class="space-y-2 text-sm text-white"></div>
+                </div>
+
+                <!-- Predicted Neurological Impact (NEW) -->
+                <div id="neuroImpactSection" class="bg-indigo-500/10 border border-indigo-500/30 rounded p-4 hidden">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i data-lucide="brain" class="w-4 h-4 text-indigo-400"></i>
+                        <span class="text-indigo-400 font-bold text-xs uppercase">Neurological Impact Analysis</span>
+                    </div>
+                    <p id="resNeuroImpact" class="text-gray-300 text-sm leading-relaxed"></p>
+                </div>
+
+                <!-- Side Effects -->
+                <div class="bg-white/5 p-4 rounded border border-terminal-border">
+                    <div class="text-xs text-gray-500 mb-2">POTENTIAL ADVERSE EFFECTS</div>
+                    <div id="resSideEffects" class="flex flex-wrap gap-2"></div>
+                </div>
+
+                <!-- Monitoring Plan -->
+                <div id="monitoringSection" class="bg-green-500/10 border border-green-500/30 rounded p-4">
+                    <div class="flex items-center gap-2 mb-3">
+                        <i data-lucide="clipboard-check" class="w-5 h-5 text-green-500"></i>
+                        <span class="text-green-500 font-bold text-sm">MONITORING PLAN</span>
+                    </div>
+                    <div id="monitoringList" class="space-y-2 text-sm"></div>
+                </div>
+
+                <!-- Interventions Required -->
+                <div id="interventionsSection" class="bg-purple-500/10 border border-purple-500/30 rounded p-4">
+                    <div class="flex items-center gap-2 mb-3">
+                        <i data-lucide="wrench" class="w-5 h-5 text-purple-500"></i>
+                        <span class="text-purple-500 font-bold text-sm">RECOMMENDED INTERVENTIONS</span>
+                    </div>
+                    <div id="interventionsList" class="space-y-3"></div>
+                </div>
+
+                <!-- AI COUNCIL DELIBERATION SECTION -->
+                <div id="councilSection" class="hidden mt-4">
+                    <div
+                        class="bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 border border-indigo-500/30 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="users" class="w-6 h-6 text-indigo-400"></i>
+                                <span class="text-indigo-400 font-bold text-lg">AI CLINICAL COUNCIL</span>
+                            </div>
+                            <div id="councilConsensus" class="flex items-center gap-2">
+                                <span class="text-xs text-gray-400">CONSENSUS:</span>
+                                <span id="councilConsensusScore" class="text-xl font-bold text-indigo-400">--%</span>
+                            </div>
+                        </div>
+
+                        <!-- Council Verdict -->
+                        <div class="bg-black/40 rounded p-3 mb-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-400 text-sm">COUNCIL VERDICT:</span>
+                                <span id="councilVerdictBadge" class="px-3 py-1 rounded font-bold text-sm"></span>
+                            </div>
+                        </div>
+
+                        <!-- Individual Model Opinions -->
+                        <div class="mb-4">
+                            <div class="text-xs text-gray-500 mb-2 flex items-center gap-2">
+                                <i data-lucide="brain" class="w-4 h-4"></i>
+                                MODEL OPINIONS (4 AI Models)
+                            </div>
+                            <div id="modelOpinions" class="grid grid-cols-2 gap-3"></div>
+                        </div>
+
+                        <!-- Debate Highlights -->
+                        <div id="debateSection" class="hidden mb-4">
+                            <div class="text-xs text-gray-500 mb-2 flex items-center gap-2">
+                                <i data-lucide="message-square" class="w-4 h-4"></i>
+                                KEY DEBATE POINTS
+                            </div>
+                            <div id="debatePoints" class="space-y-2"></div>
+                        </div>
+
+                        <!-- Dissent (if any) -->
+                        <div id="dissentSection" class="hidden">
+                            <div class="bg-orange-500/10 border border-orange-500/30 rounded p-3">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <i data-lucide="alert-triangle" class="w-4 h-4 text-orange-400"></i>
+                                    <span class="text-orange-400 font-bold text-sm">DISSENTING OPINIONS</span>
+                                </div>
+                                <div id="dissentList" class="space-y-1 text-sm text-orange-300"></div>
+                            </div>
+                        </div>
+
+                        <!-- Unanimous Recommendations -->
+                        <div id="unanimousSection" class="hidden mt-3">
+                            <div class="bg-green-500/10 border border-green-500/30 rounded p-3">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <i data-lucide="check-circle" class="w-4 h-4 text-green-400"></i>
+                                    <span class="text-green-400 font-bold text-sm">ALL MODELS AGREE</span>
+                                </div>
+                                <div id="unanimousList" class="space-y-1 text-sm text-green-300"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('simForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const patientId = new URLSearchParams(window.location.search).get('patient_id');
+
+        if (!patientId) {
+            alert("Please select a patient first.");
+            return;
+        }
+
+        // UI State: Loading
+        document.getElementById('simPlaceholder').classList.add('hidden');
+        document.getElementById('simResults').classList.add('hidden');
+        document.getElementById('simLoading').classList.remove('hidden');
+
+        try {
+            const response = await fetch('/api/simulate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    patient_id: patientId,
+                    drug: formData.get('drug'),
+                    dosage: formData.get('dosage'),
+                    duration: formData.get('duration')
+                })
+            });
+
+            const data = await response.json();
+
+            // UI State: Results
+            document.getElementById('simLoading').classList.add('hidden');
+            document.getElementById('simResults').classList.remove('hidden');
+
+            // === MAIN METRICS ===
+
+            // Outcome Badge - Premium Pill Style
+            const outcomeEl = document.getElementById('resOutcome');
+            let outcomeClass = 'bg-gradient-to-r from-gray-700 to-gray-600 text-white border-gray-500/30 shadow-lg';
+            if (data.outcome === 'CONTRAINDICATED') {
+                outcomeClass = 'bg-gradient-to-r from-red-600 to-red-500 text-white border-red-400/30 shadow-red-500/25 shadow-lg';
+            } else if (data.outcome_class === 'POSITIVE' || data.outcome.includes('POSITIVE')) {
+                outcomeClass = 'bg-gradient-to-r from-emerald-600/80 to-green-500/80 text-white border-emerald-400/30 shadow-emerald-500/25 shadow-lg';
+            } else if (data.outcome.includes('HIGH RISK') || data.outcome.includes('ADVERSE')) {
+                outcomeClass = 'bg-gradient-to-r from-red-600/80 to-orange-500/80 text-white border-red-400/30 shadow-red-500/25 shadow-lg';
+            } else if (data.outcome.includes('MODERATE') || data.outcome.includes('SUBOPTIMAL')) {
+                outcomeClass = 'bg-gradient-to-r from-amber-600/80 to-yellow-500/80 text-white border-yellow-400/30 shadow-yellow-500/25 shadow-lg';
+            } else if (data.outcome.includes('ACCEPTABLE') || data.outcome.includes('MODEST')) {
+                outcomeClass = 'bg-gradient-to-r from-cyan-600/80 to-blue-500/80 text-white border-cyan-400/30 shadow-cyan-500/25 shadow-lg';
+            }
+            outcomeEl.textContent = data.outcome;
+            outcomeEl.className = `px-5 py-2 rounded-full text-sm font-bold uppercase tracking-wider border ${outcomeClass}`;
+
+            // Intervention Duration - Premium Style
+            const durationEl = document.getElementById('resDuration');
+            if (data.intervention_duration) {
+                durationEl.querySelector('span').textContent = data.intervention_duration;
+                durationEl.classList.remove('hidden');
+            } else {
+                durationEl.classList.add('hidden');
+            }
+
+            // Efficacy Score with Animated Radial Gauge
+            const efficacy = data.efficacy_score || 0;
+            const resEfficacyEl = document.getElementById('resEfficacy');
+            if (resEfficacyEl) resEfficacyEl.textContent = efficacy;
+
+            // Animate radial gauge
+            const efficacyCircle = document.getElementById('efficacyCircle');
+            const circumference = 2 * Math.PI * 40; // radius = 40
+            const offset = circumference - (efficacy / 100) * circumference;
+            if (efficacyCircle) {
+                setTimeout(() => {
+                    efficacyCircle.style.strokeDashoffset = offset;
+                }, 100);
+            }
+
+            // Update bar
+            const efficacyBar = document.querySelector('#resEfficacyBar > div');
+            if (efficacyBar) efficacyBar.style.width = `${efficacy}%`;
+
+            // Update label
+            const efficacyLabel = document.getElementById('efficacyLabel');
+            if (efficacyLabel) {
+                if (efficacy >= 80) {
+                    efficacyLabel.textContent = '✨ Excellent therapeutic potential';
+                    efficacyLabel.className = 'text-xs text-emerald-400 mt-2';
+                } else if (efficacy >= 60) {
+                    efficacyLabel.textContent = '👍 Good effectiveness expected';
+                    efficacyLabel.className = 'text-xs text-green-400 mt-2';
+                } else if (efficacy >= 40) {
+                    efficacyLabel.textContent = '⚠️ Moderate effectiveness';
+                    efficacyLabel.className = 'text-xs text-yellow-400 mt-2';
+                } else {
+                    efficacyLabel.textContent = '⚡ Limited effectiveness expected';
+                    efficacyLabel.className = 'text-xs text-orange-400 mt-2';
+                }
+            }
+
+            // Safety Score with Animated Radial Gauge
+            const safety = data.safety_score || 0;
+            const resSafetyEl = document.getElementById('resSafety');
+            if (resSafetyEl) resSafetyEl.textContent = safety;
+
+            // Animate radial gauge
+            const safetyCircle = document.getElementById('safetyCircle');
+            const safetyOffset = circumference - (safety / 100) * circumference;
+            if (safetyCircle) {
+                setTimeout(() => {
+                    safetyCircle.style.strokeDashoffset = safetyOffset;
+                }, 100);
+            }
+
+            // Update bar
+            const safetyBar = document.querySelector('#resSafetyBar > div');
+            if (safetyBar) safetyBar.style.width = `${safety}%`;
+
+            // Update label
+            const safetyLabel = document.getElementById('safetyLabel');
+            if (safetyLabel) {
+                if (safety >= 90) {
+                    safetyLabel.textContent = '🛡️ Excellent safety profile';
+                    safetyLabel.className = 'text-xs text-emerald-400 mt-2';
+                } else if (safety >= 70) {
+                    safetyLabel.textContent = '✓ Acceptable safety with monitoring';
+                    safetyLabel.className = 'text-xs text-green-400 mt-2';
+                } else if (safety >= 50) {
+                    safetyLabel.textContent = '⚠️ Elevated risk - close monitoring needed';
+                    safetyLabel.className = 'text-xs text-yellow-400 mt-2';
+                } else {
+                    safetyLabel.textContent = '🚨 High risk - consider alternatives';
+                    safetyLabel.className = 'text-xs text-red-400 mt-2';
+                }
+            }
+
+            // Overall Risk with Dynamic Styling
+            const riskEl = document.getElementById('resRisk');
+            const riskIconContainer = document.getElementById('riskIconContainer');
+            const riskStyles = {
+                'LOW': {
+                    text: 'text-terminal-green',
+                    bgClass: 'bg-terminal-green/20 border-terminal-green/30',
+                    icon: 'text-terminal-green'
+                },
+                'MODERATE': {
+                    text: 'text-yellow-400',
+                    bgClass: 'bg-yellow-500/20 border-yellow-500/30',
+                    icon: 'text-yellow-400'
+                },
+                'HIGH': {
+                    text: 'text-orange-400',
+                    bgClass: 'bg-orange-500/20 border-orange-500/30',
+                    icon: 'text-orange-400'
+                },
+                'CRITICAL': {
+                    text: 'text-red-400',
+                    bgClass: 'bg-red-500/20 border-red-500/30',
+                    icon: 'text-red-400'
+                }
+            };
+            const riskStyle = riskStyles[data.overall_risk] || riskStyles['LOW'];
+            if (riskEl) {
+                riskEl.textContent = data.overall_risk || 'UNKNOWN';
+                riskEl.className = `text-2xl font-bold ${riskStyle.text}`;
+            }
+            if (riskIconContainer) {
+                riskIconContainer.className = `w-14 h-14 rounded-xl flex items-center justify-center border ${riskStyle.bgClass}`;
+                const iconEl = riskIconContainer.querySelector('i');
+                if (iconEl) {
+                    iconEl.className = `w-7 h-7 ${riskStyle.icon}`;
+                }
+            }
+
+            // Can Prescribe Icon with Label
+            const canPrescribeEl = document.getElementById('resCanPrescribe');
+            const prescribeLabel = document.getElementById('prescribeLabel');
+            if (canPrescribeEl) {
+                if (data.can_prescribe === false || data.outcome === 'CONTRAINDICATED') {
+                    canPrescribeEl.innerHTML = '⛔';
+                    if (prescribeLabel) {
+                        prescribeLabel.textContent = 'BLOCKED';
+                        prescribeLabel.className = 'text-xs text-red-400 uppercase font-bold';
+                    }
+                } else if (data.overall_risk === 'LOW') {
+                    canPrescribeEl.innerHTML = '✅';
+                    if (prescribeLabel) {
+                        prescribeLabel.textContent = 'APPROVED';
+                        prescribeLabel.className = 'text-xs text-terminal-green uppercase font-bold';
+                    }
+                } else if (data.overall_risk === 'MODERATE') {
+                    canPrescribeEl.innerHTML = '⚠️';
+                    if (prescribeLabel) {
+                        prescribeLabel.textContent = 'CAUTION';
+                        prescribeLabel.className = 'text-xs text-yellow-400 uppercase font-bold';
+                    }
+                } else {
+                    canPrescribeEl.innerHTML = '🚨';
+                    if (prescribeLabel) {
+                        prescribeLabel.textContent = 'HIGH RISK';
+                        prescribeLabel.className = 'text-xs text-orange-400 uppercase font-bold';
+                    }
+                }
+            }
+
+            // Clinical Recommendation
+            document.getElementById('resClinicalRecommendation').textContent = data.clinical_recommendation || '';
+
+            // === WEIGHT-BASED DOSING RECOMMENDATION ===
+            const dosingSec = document.getElementById('dosingRecommendationSection');
+            if (data.weight_based_dosing) {
+                const dosing = data.weight_based_dosing;
+                dosingSec.classList.remove('hidden');
+
+                document.getElementById('dosingPatientWeight').textContent = `${dosing.patient_weight_kg} kg`;
+
+                // Display calculated dose
+                if (dosing.calculated_dose_mg) {
+                    document.getElementById('dosingRecommendedDose').textContent = `${dosing.calculated_dose_mg} mg ${dosing.frequency || ''}`;
+                } else if (dosing.calculated_dose_units) {
+                    document.getElementById('dosingRecommendedDose').textContent = `${dosing.calculated_dose_units} units ${dosing.frequency || ''}`;
+                } else if (dosing.note) {
+                    document.getElementById('dosingRecommendedDose').textContent = dosing.note;
+                }
+
+                // Note
+                let noteText = `Drug: ${dosing.drug} | ${dosing.indication}`;
+                if (dosing.capped_at_max) {
+                    noteText += ` (Capped at maximum dose)`;
+                }
+                document.getElementById('dosingNote').textContent = noteText;
+
+                // Renal/Obesity warnings
+                const renalWarning = document.getElementById('dosingRenalWarning');
+                if (dosing.renal_warning || dosing.obesity_warning) {
+                    renalWarning.classList.remove('hidden');
+                    let warningText = '';
+                    if (dosing.renal_warning) warningText += `⚠️ ${dosing.renal_warning} `;
+                    if (dosing.obesity_warning) warningText += `⚖️ ${dosing.obesity_warning}`;
+                    renalWarning.textContent = warningText;
+                } else {
+                    renalWarning.classList.add('hidden');
+                }
+            } else {
+                dosingSec.classList.add('hidden');
+            }
+
+            // === PHARMACOGENOMICS ALERT ===
+            const pgxSec = document.getElementById('pgxAlertSection');
+            if (data.pharmacogenomics_alert) {
+                const pgx = data.pharmacogenomics_alert;
+                pgxSec.classList.remove('hidden');
+
+                const alertLevel = pgx.alert_level;
+                const levelColors = {
+                    'CRITICAL': 'text-red-400 font-bold',
+                    'HIGH': 'text-orange-400',
+                    'MODERATE': 'text-yellow-400',
+                    'LOW': 'text-blue-300'
+                };
+
+                let pgxHtml = `
+                    <div class="bg-black/40 border border-purple-500/30 rounded p-3">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="px-2 py-0.5 rounded text-xs font-bold bg-${alertLevel === 'CRITICAL' ? 'red' : alertLevel === 'HIGH' ? 'orange' : 'yellow'}-500/30 ${levelColors[alertLevel] || 'text-gray-300'}">${alertLevel} ALERT</span>
+                            <span class="text-gray-400 text-xs">${pgx.enzyme || pgx.marker}</span>
+                        </div>
+                        <div class="text-sm text-purple-200 mb-1">${pgx.effect}</div>
+                        <div class="text-xs text-purple-300">→ ${pgx.recommendation}</div>
+                        ${pgx.special_note ? `<div class="text-xs text-red-400 mt-2">⚠️ ${pgx.special_note}</div>` : ''}
+                    </div>
+                `;
+                document.getElementById('pgxAlertContent').innerHTML = pgxHtml;
+            } else {
+                pgxSec.classList.add('hidden');
+            }
+
+            // === SAFETY ALERTS ===
+            const safetyAnalysis = data.safety_analysis || {};
+
+            // Show alerts container if there are any alerts
+            if (safetyAnalysis.critical_alerts?.length || safetyAnalysis.major_warnings?.length || safetyAnalysis.moderate_warnings?.length) {
+                document.getElementById('safetyAlertsContainer').classList.remove('hidden');
+            }
+
+            // Critical Alerts
+            if (safetyAnalysis.critical_alerts && safetyAnalysis.critical_alerts.length > 0) {
+                document.getElementById('criticalAlertsSection').classList.remove('hidden');
+                const criticalHtml = safetyAnalysis.critical_alerts.map(alert => {
+                    const msg = alert.message || JSON.stringify(alert);
+                    const action = alert.action || alert.management || '';
+                    return `
+                        <div class="bg-red-500/20 border border-red-500/40 rounded p-3">
+                            <div class="text-red-300 font-bold text-sm mb-1">${msg}</div>
+                            ${action ? `<div class="text-red-200 text-xs mt-1">→ ${action}</div>` : ''}
+                            ${alert.alternatives ? `<div class="text-red-200 text-xs mt-1">Alternatives: ${Array.isArray(alert.alternatives) ? alert.alternatives.join(', ') : alert.alternatives}</div>` : ''}
+                        </div>
+                    `;
+                }).join('');
+                document.getElementById('criticalAlertsList').innerHTML = criticalHtml;
+            }
+
+            // Major Warnings
+            if (safetyAnalysis.major_warnings && safetyAnalysis.major_warnings.length > 0) {
+                document.getElementById('majorWarningsSection').classList.remove('hidden');
+                const majorHtml = safetyAnalysis.major_warnings.map(warning => {
+                    const msg = warning.message || JSON.stringify(warning);
+                    const mgmt = warning.management || '';
+                    return `
+                        <div class="bg-orange-500/20 border border-orange-500/40 rounded p-3">
+                            <div class="text-orange-300 font-bold text-sm mb-1">${msg}</div>
+                            ${mgmt ? `<div class="text-orange-200 text-xs mt-1">→ ${mgmt}</div>` : ''}
+                        </div>
+                    `;
+                }).join('');
+                document.getElementById('majorWarningsList').innerHTML = majorHtml;
+            }
+
+            // Moderate Warnings
+            if (safetyAnalysis.moderate_warnings && safetyAnalysis.moderate_warnings.length > 0) {
+                document.getElementById('moderateWarningsSection').classList.remove('hidden');
+                const moderateHtml = safetyAnalysis.moderate_warnings.map(warning => {
+                    const msg = warning.message || warning.type || JSON.stringify(warning);
+                    const mgmt = warning.management || '';
+                    return `
+                        <div class="bg-yellow-500/20 border border-yellow-500/40 rounded p-3">
+                            <div class="text-yellow-300 text-sm">${msg}</div>
+                            ${mgmt ? `<div class="text-yellow-200 text-xs mt-1">→ ${mgmt}</div>` : ''}
+                        </div>
+                    `;
+                }).join('');
+                document.getElementById('moderateWarningsList').innerHTML = moderateHtml;
+            }
+
+            // === CLINICAL DETAILS ===
+            document.getElementById('resDetails').textContent = data.details || '';
+
+            // AI Interpretation
+            if (data.ai_interpretation) {
+                document.getElementById('aiInterpretationSection').classList.remove('hidden');
+                document.getElementById('aiInterpretation').textContent = data.ai_interpretation;
+            }
+
+            // Patient Factors
+            if (data.patient_factors_considered) {
+                const factorsHtml = data.patient_factors_considered.map(factor =>
+                    `<div class="text-gray-300">• ${factor}</div>`
+                ).join('');
+                document.getElementById('patientFactors').innerHTML = factorsHtml;
+            }
+
+            // Vitals Changes
+            if (data.predicted_vitals_change) {
+                const vitalsHtml = Object.entries(data.predicted_vitals_change)
+                    .map(([k, v]) => `
+                        <div class="flex justify-between items-center bg-white/5 px-3 py-2 rounded">
+                            <span class="text-gray-400">${k.replace(/_/g, ' ').toUpperCase()}</span>
+                            <span class="font-mono text-white">${v}</span>
+                        </div>
+                    `)
+                    .join('');
+                document.getElementById('resVitals').innerHTML = vitalsHtml;
+            }
+
+            // Extract Neurological Impact from AI Interpretation if present
+            if (data.ai_interpretation) {
+                const neuroRegex = /PREDICTED NEUROLOGICAL IMPACT:?\s*(.*)/i;
+                const neuroMatch = data.ai_interpretation.match(neuroRegex);
+
+                if (neuroMatch && neuroMatch[1]) {
+                    document.getElementById('neuroImpactSection').classList.remove('hidden');
+                    document.getElementById('resNeuroImpact').textContent = neuroMatch[1];
+                } else {
+                    document.getElementById('neuroImpactSection').classList.add('hidden');
+                }
+            }
+
+            // Side Effects
+            if (data.side_effects) {
+                const sideEffectsHtml = data.side_effects
+                    .map(se => `<span class="bg-white/10 px-3 py-1.5 rounded text-xs text-gray-300">${se}</span>`)
+                    .join('');
+                document.getElementById('resSideEffects').innerHTML = sideEffectsHtml;
+            }
+
+            // Monitoring Plan
+            if (data.monitoring_plan) {
+                const monitoringHtml = data.monitoring_plan.map(item => `
+                    <div class="bg-green-500/10 border border-green-500/20 rounded p-2">
+                        <div class="text-green-300 font-bold text-xs">${item.test}</div>
+                        <div class="text-green-200 text-xs mt-1">${item.reason}</div>
+                        <div class="text-green-200 text-xs">Frequency: ${item.frequency}</div>
+                    </div>
+                `).join('');
+                document.getElementById('monitoringList').innerHTML = monitoringHtml;
+            }
+
+            // Interventions
+            if (data.interventions_required) {
+                const interventionsHtml = data.interventions_required.map(intervention => {
+                    const priorityColors = {
+                        'HIGH': 'red',
+                        'MODERATE': 'yellow',
+                        'LOW': 'blue'
+                    };
+                    const color = priorityColors[intervention.priority] || 'gray';
+                    return `
+                        <div class="bg-purple-500/10 border border-purple-500/20 rounded p-3">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="px-2 py-0.5 rounded text-xs font-bold bg-${color}-500/30 text-${color}-300">${intervention.priority} PRIORITY</span>
+                            </div>
+                            <div class="text-purple-200 text-sm font-bold mb-1">${intervention.action}</div>
+                            <div class="text-purple-300 text-xs">${intervention.rationale}</div>
+                            ${intervention.alternatives ? `<div class="text-purple-300 text-xs mt-1">Alternatives: ${Array.isArray(intervention.alternatives) ? intervention.alternatives.join(', ') : intervention.alternatives}</div>` : ''}
+                        </div>
+                    `;
+                }).join('');
+                document.getElementById('interventionsList').innerHTML = interventionsHtml;
+            }
+
+            // === AI COUNCIL DELIBERATION ===
+            if (data.council_deliberation) {
+                const council = data.council_deliberation;
+                document.getElementById('councilSection').classList.remove('hidden');
+
+                // Consensus Score
+                const consensusPercent = Math.round((council.consensus_score || 0) * 100);
+                document.getElementById('councilConsensusScore').textContent = `${consensusPercent}%`;
+
+                // Council Verdict Badge
+                const verdictBadge = document.getElementById('councilVerdictBadge');
+                const verdictColors = {
+                    'APPROVE': 'bg-green-500/30 text-green-300',
+                    'CAUTION': 'bg-yellow-500/30 text-yellow-300',
+                    'REJECT': 'bg-red-500/30 text-red-300'
+                };
+                verdictBadge.textContent = council.final_verdict || 'UNKNOWN';
+                verdictBadge.className = `px-3 py-1 rounded font-bold text-sm ${verdictColors[council.final_verdict] || 'bg-gray-500/30 text-gray-300'}`;
+
+                // Model Opinions
+                if (council.model_opinions && council.model_opinions.length > 0) {
+                    const modelIcons = {
+                        'GPT-4o': '🧠',
+                        'Gemini 2.0 Flash': '✨',
+                        'Mistral Large': '🌬️',
+                        'Llama 3.1 70B': '🦙'
+                    };
+
+                    const opinionsHtml = council.model_opinions.map(op => {
+                        const verdictColor = {
+                            'APPROVE': 'border-green-500/50 bg-green-500/10',
+                            'CAUTION': 'border-yellow-500/50 bg-yellow-500/10',
+                            'REJECT': 'border-red-500/50 bg-red-500/10'
+                        }[op.verdict] || 'border-gray-500/50 bg-gray-500/10';
+
+                        const icon = modelIcons[op.model_name] || '🤖';
+                        const confidence = Math.round((op.confidence || 0) * 100);
+
+                        return `
+                            <div class="border ${verdictColor} rounded p-3">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-lg">${icon}</span>
+                                        <span class="text-white font-bold text-xs">${op.model_name}</span>
+                                    </div>
+                                    <div class="text-xs text-gray-400">${op.provider}</div>
+                                </div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="px-2 py-0.5 rounded text-xs font-bold ${verdictColors[op.verdict] || 'bg-gray-500/30 text-gray-300'}">${op.verdict}</span>
+                                    <span class="text-xs text-gray-400">${confidence}% confident</span>
+                                </div>
+                                <div class="text-xs text-gray-300 line-clamp-3">${op.reasoning?.substring(0, 150)}${op.reasoning?.length > 150 ? '...' : ''}</div>
+                                ${op.key_concerns?.length > 0 ? `
+                                    <div class="mt-2 text-xs">
+                                        <span class="text-gray-500">Concerns:</span>
+                                        <span class="text-orange-300">${op.key_concerns.slice(0, 2).join(', ')}</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `;
+                    }).join('');
+                    document.getElementById('modelOpinions').innerHTML = opinionsHtml;
+                }
+
+                // Debate Points
+                if (council.key_debate_points && council.key_debate_points.length > 0) {
+                    document.getElementById('debateSection').classList.remove('hidden');
+
+                    const debateHtml = council.key_debate_points.slice(0, 5).map(dp => {
+                        const typeColors = {
+                            'AGREE': 'text-green-400',
+                            'DISAGREE': 'text-red-400',
+                            'CLARIFY': 'text-blue-400',
+                            'CHALLENGE': 'text-orange-400'
+                        };
+                        return `
+                            <div class="bg-black/40 rounded p-2 text-xs">
+                                <span class="font-bold text-white">${dp.source_model}</span>
+                                <span class="text-gray-500">→</span>
+                                <span class="text-gray-400">${dp.target_model}:</span>
+                                <span class="${typeColors[dp.point_type] || 'text-gray-400'}">[${dp.point_type}]</span>
+                                <span class="text-gray-300 ml-1">${dp.content?.substring(0, 100)}${dp.content?.length > 100 ? '...' : ''}</span>
+                            </div>
+                        `;
+                    }).join('');
+                    document.getElementById('debatePoints').innerHTML = debateHtml;
+                }
+
+                // Dissent
+                if (council.dissenting_models && council.dissenting_models.length > 0) {
+                    document.getElementById('dissentSection').classList.remove('hidden');
+                    const dissentHtml = council.dissent_reasons?.map(reason =>
+                        `<div>⚠️ ${reason}</div>`
+                    ).join('') || council.dissenting_models.map(m =>
+                        `<div>⚠️ ${m} disagrees with the verdict</div>`
+                    ).join('');
+                    document.getElementById('dissentList').innerHTML = dissentHtml;
+                }
+
+                // Unanimous Recommendations
+                if (council.unanimous_recommendations && council.unanimous_recommendations.length > 0) {
+                    document.getElementById('unanimousSection').classList.remove('hidden');
+                    const unanimousHtml = council.unanimous_recommendations.map(rec =>
+                        `<div>✓ ${rec}</div>`
+                    ).join('');
+                    document.getElementById('unanimousList').innerHTML = unanimousHtml;
+                }
+            }
+
+            // Re-initialize Lucide icons
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+
+        } catch (error) {
+            console.error(error);
+            alert("Simulation failed: " + error.message);
+            document.getElementById('simLoading').classList.add('hidden');
+            document.getElementById('simPlaceholder').classList.remove('hidden');
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,1662 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="h-full flex flex-col gap-4" id="patient-container" data-patient-id="{{ patient.id }}">
+    <!-- Header -->
+    <div class="flex justify-between items-start border-b border-terminal-border pb-4">
+        <div>
+            <div class="flex items-center gap-3">
+                <h1 class="text-3xl font-bold text-white">{{ patient.name }}</h1>
+                <span class="font-mono text-terminal-green text-lg">#{{ patient.id }}</span>
+                <span
+                    class="px-2 py-0.5 rounded text-xs font-bold {% if patient.status == 'Critical' %}bg-red-500/20 text-red-400{% else %}bg-green-500/20 text-green-400{% endif %}">
+                    {{ patient.status }}
+                </span>
+            </div>
+            <div class="text-gray-400 mt-1 flex gap-4 text-sm">
+                <span>{{ patient.age }} Years / {{ patient.sex }}</span>
+                <span>|</span>
+                <span>Primary: <span class="text-white">{{ patient.condition }}</span></span>
+            </div>
+        </div>
+        <div class="text-right flex gap-2">
+            <button id="btn-edit-details"
+                class="bg-white/10 text-white font-bold px-4 py-2 rounded hover:bg-white/20 transition">EDIT
+                DETAILS</button>
+
+            <!-- NEW BUTTONS -->
+            <a href="/surgical-risk?patient_id={{ patient.id }}"
+                class="bg-white/10 border border-red-500/50 text-red-400 font-bold px-4 py-2 rounded hover:bg-red-500/20 transition flex items-center justify-center gap-2">
+                <i data-lucide="activity" class="w-4 h-4"></i> RISK
+            </a>
+
+            <button onclick="openClinicalNotes()"
+                class="bg-white/10 border border-white/20 text-white font-bold px-4 py-2 rounded hover:bg-white/20 transition flex items-center gap-2">
+                <i data-lucide="file-text" class="w-4 h-4"></i> NOTES
+            </button>
+
+            <button id="btn-start-simulation" data-patient-id="{{ patient.id }}"
+                class="bg-terminal-green text-black font-bold px-4 py-2 rounded hover:bg-green-400 transition">INITIATE
+                SIMULATION</button>
+        </div>
+    </div>
+
+    <!-- EVIDENCE TIMELINE & KNOWLEDGE GRAPH (Collapsible) -->
+    <div class="border border-terminal-border rounded bg-gradient-to-r from-blue-900/10 to-black">
+        <button id="btn-toggle-evidence-timeline"
+            class="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-white/5 transition group">
+            <div class="flex items-center gap-3 text-sm">
+                <div
+                    class="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center group-hover:bg-blue-500/30 transition">
+                    <i data-lucide="git-branch" class="w-4 h-4 text-blue-400"></i>
+                </div>
+                <div>
+                    <span class="text-gray-200 font-bold tracking-wider">EVIDENCE TIMELINE</span>
+                    <span class="text-[10px] text-gray-500 ml-2">| Landmark Trials for {{ patient.condition }}</span>
+                </div>
+                <span class="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-[10px] rounded font-bold">KNOWLEDGE
+                    GRAPH</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-xs text-gray-500 hidden group-hover:block">Click to expand</span>
+                <span id="evidence-timeline-arrow" class="text-gray-500 text-xs transition-transform">▶</span>
+            </div>
+        </button>
+
+        <!-- Collapsible Timeline Content -->
+        <div id="evidence-timeline-content" class="hidden border-t border-terminal-border bg-black/30">
+            <!-- Loading State -->
+            <div id="evidence-timeline-loading" class="p-8 text-center">
+                <div class="inline-flex items-center gap-3 text-gray-400">
+                    <div class="w-5 h-5 border-2 border-terminal-green border-t-transparent rounded-full animate-spin">
+                    </div>
+                    <span class="text-sm">Loading evidence timeline...</span>
+                </div>
+            </div>
+
+            <!-- Timeline Data Container -->
+            <div id="evidence-timeline-data" class="hidden p-4">
+                <!-- Current Standard of Care -->
+                <div id="current-standard-section" class="mb-4">
+                    <div class="text-[10px] text-terminal-green font-bold tracking-widest mb-2 flex items-center gap-2">
+                        <i data-lucide="target" class="w-3 h-3"></i> CURRENT EVIDENCE-BASED STANDARD
+                    </div>
+                    <div id="current-standard-text"
+                        class="text-gray-300 text-sm bg-terminal-green/5 border border-terminal-green/20 rounded p-3">
+                        Loading...
+                    </div>
+                </div>
+
+                <!-- Visual Timeline -->
+                <div class="mb-4">
+                    <div class="text-[10px] text-blue-400 font-bold tracking-widest mb-3 flex items-center gap-2">
+                        <i data-lucide="calendar" class="w-3 h-3"></i> LANDMARK TRIALS TIMELINE
+                    </div>
+                    <div id="timeline-visual" class="relative">
+                        <!-- Timeline line -->
+                        <div
+                            class="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-500 via-terminal-green to-purple-500">
+                        </div>
+
+                        <!-- Timeline items will be injected here -->
+                        <div id="timeline-items" class="space-y-3 ml-8">
+                            <!-- Items injected by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Knowledge Graph Preview -->
+                <div class="mb-4">
+                    <div class="text-[10px] text-purple-400 font-bold tracking-widest mb-3 flex items-center gap-2">
+                        <i data-lucide="network" class="w-3 h-3"></i> KNOWLEDGE GRAPH
+                    </div>
+                    <div id="knowledge-graph-container"
+                        class="bg-black/40 border border-purple-500/20 rounded-lg p-2 relative overflow-hidden"
+                        style="height: 200px;">
+                        <!-- SVG Graph Canvas -->
+                        <svg id="knowledge-graph-svg" width="100%" height="100%" class="w-full h-full">
+                            <defs>
+                                <marker id="arrowhead-graph" markerWidth="10" markerHeight="7" refX="10" refY="3.5"
+                                    orient="auto">
+                                    <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7" fill-opacity="0.6" />
+                                </marker>
+                                <filter id="glow">
+                                    <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+                                    <feMerge>
+                                        <feMergeNode in="coloredBlur" />
+                                        <feMergeNode in="SourceGraphic" />
+                                    </feMerge>
+                                </filter>
+                            </defs>
+                            <!-- Graph will be drawn here by JS -->
+                        </svg>
+                        <!-- Fallback text nodes -->
+                        <div id="knowledge-graph-nodes"
+                            class="absolute inset-0 flex flex-wrap gap-2 justify-center items-center p-4 hidden">
+                            <!-- Nodes as fallback -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Emerging Therapies -->
+                <div id="emerging-therapies-section" class="hidden">
+                    <div class="text-[10px] text-orange-400 font-bold tracking-widest mb-2 flex items-center gap-2">
+                        <i data-lucide="rocket" class="w-3 h-3"></i> EMERGING THERAPIES
+                    </div>
+                    <div id="emerging-therapies-list" class="flex flex-wrap gap-2">
+                        <!-- Items injected by JS -->
+                    </div>
+                </div>
+
+                <!-- Patient Relevance -->
+                <div id="patient-relevance-section" class="mt-4 pt-4 border-t border-gray-800">
+                    <div class="text-[10px] text-gray-500 font-bold tracking-widest mb-2">PATIENT RELEVANCE</div>
+                    <div id="patient-relevance-text" class="text-sm text-gray-400">
+                        Loading applicability assessment...
+                    </div>
+                </div>
+
+                <!-- Cross-Module Integration Buttons -->
+                <div class="mt-4 pt-4 border-t border-gray-800 flex flex-wrap gap-2">
+                    <button onclick="openEvidenceInLiterature()"
+                        class="px-3 py-1.5 bg-terminal-green/20 text-terminal-green text-xs font-bold rounded hover:bg-terminal-green/30 transition flex items-center gap-1">
+                        <i data-lucide="external-link" class="w-3 h-3"></i> Full Literature Search
+                    </button>
+                    <button onclick="openGuidelinesForCondition()"
+                        class="px-3 py-1.5 bg-blue-500/20 text-blue-400 text-xs font-bold rounded hover:bg-blue-500/30 transition flex items-center gap-1">
+                        <i data-lucide="scale" class="w-3 h-3"></i> Compare Guidelines
+                    </button>
+                    <button onclick="simulateWithEvidence()"
+                        class="px-3 py-1.5 bg-purple-500/20 text-purple-400 text-xs font-bold rounded hover:bg-purple-500/30 transition flex items-center gap-1">
+                        <i data-lucide="activity" class="w-3 h-3"></i> Simulate Treatment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-3 gap-4 flex-1 overflow-hidden">
+        <!-- Col 1: Vitals & Meds -->
+        <div class="flex flex-col gap-4 overflow-auto pr-2">
+            <!-- Vitals Card -->
+            <div class="bg-white/5 border border-terminal-border p-4 rounded">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-terminal-green font-bold text-sm tracking-wider">LAST NOTED VITALS</h2>
+                    <span id="vitals-timestamp" class="text-xs text-gray-500 font-mono">{{ patient.vitals.recorded_at
+                        }}</span>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <div class="text-gray-500 text-xs">BLOOD PRESSURE</div>
+                        <div class="text-xl text-white font-mono editable-vital cursor-pointer hover:bg-white/5 px-1 rounded transition"
+                            data-vital="bp" title="Click to edit">
+                            <span class="vital-display">{{ patient.vitals.bp_systolic }}/{{ patient.vitals.bp_diastolic
+                                }}</span>
+                            <span class="vital-edit hidden">
+                                <input type="number"
+                                    class="vital-input-sys bg-black border border-terminal-green text-white w-16 px-1 rounded"
+                                    value="{{ patient.vitals.bp_systolic }}">/
+                                <input type="number"
+                                    class="vital-input-dia bg-black border border-terminal-green text-white w-16 px-1 rounded"
+                                    value="{{ patient.vitals.bp_diastolic }}">
+                            </span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-gray-500 text-xs">HEART RATE</div>
+                        <div class="text-xl text-white font-mono editable-vital cursor-pointer hover:bg-white/5 px-1 rounded transition"
+                            data-vital="heart_rate" title="Click to edit">
+                            <span class="vital-display">{{ patient.vitals.heart_rate }} <span
+                                    class="text-xs">BPM</span></span>
+                            <span class="vital-edit hidden">
+                                <input type="number"
+                                    class="vital-input bg-black border border-terminal-green text-white w-20 px-1 rounded"
+                                    value="{{ patient.vitals.heart_rate }}"> <span class="text-xs">BPM</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-gray-500 text-xs">SpO2</div>
+                        <div class="text-xl text-white font-mono editable-vital cursor-pointer hover:bg-white/5 px-1 rounded transition"
+                            data-vital="spO2" title="Click to edit">
+                            <span class="vital-display">{{ patient.vitals.spO2 }}%</span>
+                            <span class="vital-edit hidden">
+                                <input type="number"
+                                    class="vital-input bg-black border border-terminal-green text-white w-16 px-1 rounded"
+                                    value="{{ patient.vitals.spO2 }}">%
+                            </span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-gray-500 text-xs">TEMP</div>
+                        <div class="text-xl text-white font-mono editable-vital cursor-pointer hover:bg-white/5 px-1 rounded transition"
+                            data-vital="temp" title="Click to edit">
+                            <span class="vital-display">{{ patient.vitals.temp }}°F</span>
+                            <span class="vital-edit hidden">
+                                <input type="number" step="0.1"
+                                    class="vital-input bg-black border border-terminal-green text-white w-16 px-1 rounded"
+                                    value="{{ patient.vitals.temp }}">°F
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Meds Card -->
+            <div class="bg-white/5 border border-terminal-border p-4 rounded flex-1 overflow-auto">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-terminal-green font-bold text-sm tracking-wider">ACTIVE MEDICATIONS</h2>
+                    <button id="btn-add-medication"
+                        class="text-terminal-green hover:bg-white/10 px-2 py-1 rounded transition text-xs">+
+                        ADD</button>
+                </div>
+                <div class="space-y-2">
+                    {% for med in patient.current_medications %}
+                    <div class="flex justify-between items-center border-b border-terminal-border pb-2 last:border-0">
+                        <div class="flex-1">
+                            <div class="text-white font-bold">{{ med.name }}</div>
+                            <div class="text-xs text-gray-500">{{ med.class }}</div>
+                            <div class="text-xs text-gray-600 mt-1">Since: {{ med.start_date }}</div>
+                        </div>
+                        <button
+                            class="btn-stop-med text-red-400 hover:bg-red-500/20 px-2 py-1 rounded transition text-xs"
+                            data-med-name="{{ med.name }}">× STOP</button>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="mt-4 border-t border-terminal-border pt-3">
+                    <button id="btn-toggle-history"
+                        class="flex items-center gap-2 text-gray-400 hover:text-white transition w-full text-left">
+                        <span id="history-arrow" class="text-xs">▶</span>
+                        <span class="text-xs font-bold tracking-wider">PAST MEDICATIONS</span>
+                        <span class="text-xs text-gray-600">({{ patient.medication_history|length if
+                            patient.medication_history else 0 }})</span>
+                    </button>
+                    <div id="medication-history" class="hidden mt-3 space-y-2 max-h-48 overflow-auto">
+                        {% if patient.medication_history %}
+                        {% for med in patient.medication_history|reverse %}
+                        <div class="bg-black/30 border border-white/5 p-2 rounded text-xs">
+                            <div class="text-white font-bold">{{ med.name }}</div>
+                            <div class="text-gray-500">{{ med.class }}</div>
+                            <div class="text-gray-600 mt-1">{{ med.start_date }} → {{ med.end_date }}</div>
+                            {% if med.reason_stopped %}<div class="text-gray-500 mt-1 italic">Reason: {{
+                                med.reason_stopped }}</div>{% endif %}
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="text-gray-600 text-xs italic">No medication history</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Col 2: Timeline -->
+        <div class="col-span-2 bg-white/5 border border-terminal-border p-4 rounded overflow-auto">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="text-terminal-green font-bold text-sm tracking-wider">MEDICAL TIMELINE</h2>
+                <button id="btn-add-event"
+                    class="text-terminal-green hover:bg-white/10 px-2 py-1 rounded transition text-xs">+ ADD
+                    EVENT</button>
+            </div>
+            <div class="relative border-l border-terminal-border ml-2 pl-4 space-y-6">
+                {% for event in patient.history %}
+                <div class="relative group" data-event-index="{{ loop.index0 }}">
+                    <div class="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-terminal-green"></div>
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <div class="text-xs text-gray-500 font-mono mb-1">{{ event.date }}</div>
+                            <div class="text-white font-bold flex items-center gap-2">
+                                {{ event.event }}
+                                {% if event.attachments and event.attachments|length > 0 %}
+                                <span class="text-xs text-terminal-green">(📎 {{ event.attachments|length }})</span>
+                                {% endif %}
+                            </div>
+                            <div class="text-sm text-gray-400 mt-1">{{ event.notes }}</div>
+                            {% if event.attachments and event.attachments|length > 0 %}
+                            <div class="mt-3 space-y-2">
+                                {% for attachment in event.attachments %}
+                                <div class="bg-gray-900/50 border border-gray-700 rounded p-3">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <a href="{{ attachment.url }}" target="_blank"
+                                            class="text-xs text-terminal-green hover:underline flex items-center gap-1">
+                                            📄 {{ attachment.original_filename }}
+                                        </a>
+                                        {% if attachment.analysis %}
+                                        <span
+                                            class="text-xs bg-terminal-green/20 text-terminal-green px-2 py-0.5 rounded">AI
+                                            Analyzed</span>
+                                        {% endif %}
+                                    </div>
+
+                                    {% if attachment.analysis and not attachment.analysis.error %}
+                                    <div class="text-xs space-y-2 mt-2 pt-2 border-t border-gray-700">
+                                        <div class="flex items-center justify-between">
+                                            {% if attachment.analysis.document_type %}
+                                            <div>
+                                                <span class="text-gray-500">Type:</span>
+                                                <span class="text-gray-300">{{ attachment.analysis.document_type
+                                                    }}</span>
+                                            </div>
+                                            {% endif %}
+
+                                            {% if attachment.analysis.urgency_level %}
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold 
+                                                {% if attachment.analysis.urgency_level == 'EMERGENT' %}bg-red-500/30 text-red-400 border border-red-500/50
+                                                {% elif attachment.analysis.urgency_level == 'URGENT' %}bg-orange-500/30 text-orange-400 border border-orange-500/50
+                                                {% else %}bg-gray-500/20 text-gray-400{% endif %}">
+                                                {{ attachment.analysis.urgency_level }}
+                                            </span>
+                                            {% endif %}
+                                        </div>
+
+                                        {% if attachment.analysis.body_region %}
+                                        <div>
+                                            <span class="text-gray-500">Region:</span>
+                                            <span class="text-blue-400">{{ attachment.analysis.body_region }}</span>
+                                        </div>
+                                        {% endif %}
+
+                                        {% if attachment.analysis.pathological_diagnosis and
+                                        attachment.analysis.pathological_diagnosis != 'N/A' and
+                                        attachment.analysis.pathological_diagnosis != 'None' %}
+                                        <div class="bg-red-900/20 border border-red-500/30 rounded p-2">
+                                            <span class="text-red-400 font-bold">🔬 Pathology:</span>
+                                            <span class="text-white">{{ attachment.analysis.pathological_diagnosis
+                                                }}</span>
+                                        </div>
+                                        {% endif %}
+
+                                        {% if attachment.analysis.summary %}
+                                        <div>
+                                            <span class="text-gray-500">Summary:</span>
+                                            <p class="text-gray-300 mt-1">{{ attachment.analysis.summary }}</p>
+                                        </div>
+                                        {% endif %}
+
+                                        {% if attachment.analysis.abnormal_values and
+                                        attachment.analysis.abnormal_values|length > 0 %}
+                                        <div>
+                                            <span class="text-red-400">⚠️ Abnormal Findings:</span>
+                                            <ul class="list-disc list-inside text-gray-300">
+                                                {% for value in attachment.analysis.abnormal_values %}
+                                                <li
+                                                    class="{% if 'CRITICAL' in value %}text-red-400 font-bold{% elif 'SIGNIFICANT' in value %}text-orange-400{% else %}text-yellow-400{% endif %}">
+                                                    {{ value }}</li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                        {% endif %}
+
+                                        {% if attachment.analysis.key_findings and
+                                        attachment.analysis.key_findings|length > 0 %}
+                                        <details class="cursor-pointer">
+                                            <summary class="text-gray-500 hover:text-gray-300">Key Findings ({{
+                                                attachment.analysis.key_findings|length }})</summary>
+                                            <ul class="list-disc list-inside text-gray-300 mt-1 ml-2">
+                                                {% for finding in attachment.analysis.key_findings %}
+                                                <li>{{ finding }}</li>
+                                                {% endfor %}
+                                            </ul>
+                                        </details>
+                                        {% endif %}
+
+                                        {% if attachment.analysis.recommendations and
+                                        attachment.analysis.recommendations|length > 0 %}
+                                        <details class="cursor-pointer">
+                                            <summary class="text-terminal-green hover:text-green-300">📋 Recommendations
+                                            </summary>
+                                            <ul class="list-disc list-inside text-gray-300 mt-1 ml-2">
+                                                {% for rec in attachment.analysis.recommendations %}
+                                                <li>{{ rec }}</li>
+                                                {% endfor %}
+                                            </ul>
+                                        </details>
+                                        {% endif %}
+                                    </div>
+                                    {% elif attachment.analysis and attachment.analysis.error %}
+                                    <div class="text-xs text-gray-500 mt-2">
+                                        Analysis unavailable: {{ attachment.analysis.summary or "Analysis failed" }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="hidden group-hover:flex gap-1 ml-2">
+                            <button
+                                class="btn-edit-event text-blue-400 hover:bg-blue-500/20 px-2 py-1 rounded transition text-xs"
+                                data-event-index="{{ loop.index0 }}" data-event-date="{{ event.date }}"
+                                data-event-name="{{ event.event }}" data-event-notes="{{ event.notes }}">✎ EDIT</button>
+                            <button
+                                class="btn-delete-event text-red-400 hover:bg-red-500/20 px-2 py-1 rounded transition text-xs"
+                                data-event-index="{{ loop.index0 }}">× DELETE</button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- COMPACT PHARMACOGENOMICS LINE (Collapsible) -->
+    {% if patient.pharmacogenomics %}
+    {% set cyp2d6 = patient.pharmacogenomics.CYP2D6|default('Normal') %}
+    {% set cyp2c19 = patient.pharmacogenomics.CYP2C19|default('Normal') %}
+    {% set cyp2c9 = patient.pharmacogenomics.CYP2C9|default('Normal') %}
+    {% set has_alert = cyp2d6 in ['Poor', 'Ultra-Rapid'] or cyp2c19 == 'Poor' or cyp2c9 == 'Poor' or
+    patient.pharmacogenomics.HLA_B5701 or patient.pharmacogenomics.TPMT == 'Deficient' %}
+
+    <div class="mt-3 border border-terminal-border rounded bg-black/30">
+        <button id="btn-toggle-pgx"
+            class="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-white/5 transition">
+            <div class="flex items-center gap-2 text-sm">
+                <span>🧬</span>
+                <span class="text-gray-400 font-bold tracking-wider">PHARMACOGENOMICS</span>
+                {% if has_alert %}
+                <span class="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded">⚠️ ALERTS</span>
+                {% else %}
+                <span class="text-xs text-green-500">✓ No Critical Alerts</span>
+                {% endif %}
+                {% if patient.pharmacogenomics.tested_date %}
+                <span class="text-xs text-gray-600">| Tested: {{ patient.pharmacogenomics.tested_date }}</span>
+                {% endif %}
+            </div>
+            <span id="pgx-arrow" class="text-gray-500 text-xs">▶</span>
+        </button>
+
+        <!-- Collapsible Content -->
+        <div id="pgx-content" class="hidden border-t border-terminal-border p-4 bg-[#0a0f0a]">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- COL 1: CYP450 ENZYME PROFILE -->
+                <div>
+                    <div class="text-xs font-bold text-gray-500 mb-3 tracking-widest">CYP450 METABOLIC PROFILE</div>
+                    <div class="space-y-3">
+                        {% for enzyme in ['CYP2D6', 'CYP2C19', 'CYP2C9', 'CYP3A4'] %}
+                        {% set status = patient.pharmacogenomics[enzyme]|default('N/A') %}
+                        {% set bar_color = 'bg-gray-500' %}
+                        {% set text_color = 'text-gray-400' %}
+                        {% set width_class = 'w-[50%]' %}
+                        {% set implication = 'Standard dosing' %}
+
+                        {% if status == 'Poor' %}
+                        {% set bar_color = 'bg-red-500' %}
+                        {% set text_color = 'text-red-400' %}
+                        {% set width_class = 'w-[10%]' %}
+                        {% set implication = 'Slow clearance - Toxicity Risk' %}
+                        {% elif status == 'Intermediate' %}
+                        {% set bar_color = 'bg-yellow-500' %}
+                        {% set text_color = 'text-yellow-400' %}
+                        {% set width_class = 'w-[30%]' %}
+                        {% set implication = 'Reduced metabolism' %}
+                        {% elif status == 'Normal' %}
+                        {% set bar_color = 'bg-green-500' %}
+                        {% set text_color = 'text-green-400' %}
+                        {% set width_class = 'w-[60%]' %}
+                        {% elif status == 'Rapid' %}
+                        {% set bar_color = 'bg-blue-500' %}
+                        {% set text_color = 'text-blue-400' %}
+                        {% set width_class = 'w-[85%]' %}
+                        {% set implication = 'Increased clearance - May need higher dose' %}
+                        {% elif status == 'Ultra-Rapid' %}
+                        {% set bar_color = 'bg-purple-500' %}
+                        {% set text_color = 'text-purple-400' %}
+                        {% set width_class = 'w-full' %}
+                        {% set implication = 'Very fast clearance - Therapeutic failure risk' %}
+                        {% endif %}
+
+                        <div
+                            class="bg-white/5 border border-white/10 rounded p-3 relative overflow-hidden group hover:border-terminal-green/30 transition">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <div class="text-sm font-bold text-white">{{ enzyme }}</div>
+                                    <div class="text-xs {{ text_color }} font-mono">{{ status }} Metabolizer</div>
+                                </div>
+                                <div class="text-[10px] text-gray-500 text-right max-w-[120px]">{{ implication }}</div>
+                            </div>
+                            <!-- Metabolism Bar -->
+                            <div class="h-1.5 bg-gray-800 rounded-full overflow-hidden mt-1 relative">
+                                <div
+                                    class="absolute inset-0 bg-gradient-to-r from-red-900 via-green-900 to-purple-900 opacity-20">
+                                </div>
+                                <div class="h-full {{ bar_color }} {{ width_class }} transition-all duration-500"></div>
+                            </div>
+                            <div class="flex justify-between text-[9px] text-gray-600 mt-1 font-mono">
+                                <span>POOR</span>
+                                <span>NORMAL</span>
+                                <span>ULTRA</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- COL 2: CRITICAL MARKERS & ALERTS -->
+                <div class="flex flex-col gap-4">
+                    <!-- Specific Genes -->
+                    <div>
+                        <div class="text-xs font-bold text-gray-500 mb-3 tracking-widest">CRITICAL GENETIC MARKERS</div>
+                        <div class="grid grid-cols-1 gap-2">
+                            <!-- HLA-B -->
+                            <div
+                                class="bg-black/40 border {{ 'border-red-500/50' if patient.pharmacogenomics.HLA_B5701 else 'border-terminal-border' }} p-3 rounded flex justify-between items-center">
+                                <div>
+                                    <div class="text-xs text-gray-400">HLA-B*57:01 (Abacavir)</div>
+                                    <div
+                                        class="text-sm font-bold {{ 'text-red-400' if patient.pharmacogenomics.HLA_B5701 else 'text-green-400' }}">
+                                        {{ 'POSITIVE' if patient.pharmacogenomics.HLA_B5701 else 'NEGATIVE' }}
+                                    </div>
+                                </div>
+                                {% if patient.pharmacogenomics.HLA_B5701 %}
+                                <div
+                                    class="px-2 py-1 bg-red-500/20 text-red-300 text-xs rounded border border-red-500/30">
+                                    ❌ CONTRAINDICATED</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- VKORC1 -->
+                            <div
+                                class="bg-black/40 border border-terminal-border p-3 rounded flex justify-between items-center">
+                                <div>
+                                    <div class="text-xs text-gray-400">VKORC1 (Warfarin Sensitivity)</div>
+                                    <div
+                                        class="text-sm font-bold {{ 'text-orange-400' if patient.pharmacogenomics.VKORC1 == 'High Sensitivity' else 'text-gray-300' }}">
+                                        {{ patient.pharmacogenomics.VKORC1|default('Normal Sensitivity') }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TPMT -->
+                            <div
+                                class="bg-black/40 border border-terminal-border p-3 rounded flex justify-between items-center">
+                                <div>
+                                    <div class="text-xs text-gray-400">TPMT (Thiopurines)</div>
+                                    <div
+                                        class="text-sm font-bold {{ 'text-red-400' if patient.pharmacogenomics.TPMT == 'Deficient' else 'text-gray-300' }}">
+                                        {{ patient.pharmacogenomics.TPMT|default('Normal Activity') }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lifetime Drug Implications -->
+                    <div class="bg-blue-900/10 border border-blue-500/20 rounded p-3 flex-1">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-blue-400">ℹ️</span>
+                            <span class="text-xs font-bold text-blue-300">DRUGS TO WATCH</span>
+                        </div>
+                        <div class="text-xs text-gray-400 space-y-1">
+                            {% if patient.pharmacogenomics.CYP2D6 == 'Poor' %}
+                            <div>• <span class="text-gray-300">Opioids:</span> Codeine, Tramadol (Decreased efficacy)
+                            </div>
+                            <div>• <span class="text-gray-300">Antidepressants:</span> Fluoxetine, Paroxetine (Toxicity
+                                risk)</div>
+                            {% elif patient.pharmacogenomics.CYP2D6 == 'Ultra-Rapid' %}
+                            <div>• <span class="text-gray-300">Opioids:</span> Codeine (TOXICITY RISK!)</div>
+                            {% endif %}
+
+                            {% if patient.pharmacogenomics.CYP2C19 == 'Poor' %}
+                            <div>• <span class="text-gray-300">Antiplatelets:</span> Clopidogrel (Treatment failure)
+                            </div>
+                            {% endif %}
+
+                            {% if patient.pharmacogenomics.CYP2C9 == 'Poor' %}
+                            <div>• <span class="text-gray-300">Anticoagulants:</span> Warfarin (Bleeding risk)</div>
+                            {% endif %}
+
+                            {% if not has_alert %}
+                            <div class="italic text-gray-500">No major high-risk drugs identified for this profile.
+                                Standard monitoring applies.</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ALERTS FOOTER -->
+            {% if has_alert %}
+            <div class="mt-4 bg-red-500/10 border border-red-500/30 rounded p-3 flex gap-3 items-start">
+                <div class="text-2xl">🚨</div>
+                <div>
+                    <div class="text-sm font-bold text-red-400 mb-1">CRITICAL INTERACTION ALERTS</div>
+                    <div class="text-xs text-red-300/80 space-y-1">
+                        {% if cyp2d6 == 'Ultra-Rapid' %}<div>Avoid Codeine due to risk of fatal respiratory depression.
+                        </div>{% endif %}
+                        {% if cyp2c19 == 'Poor' %}<div>Avoid Clopidogrel; use Prasugrel or Ticagrelor instead.</div>{%
+                        endif %}
+                        {% if patient.pharmacogenomics.HLA_B5701 %}<div>STRICTLY AVOID Abacavir (Hypersensitivity
+                            Reaction).</div>{% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+
+
+<!-- Edit Patient Modal -->
+<div id="editPatientModal"
+    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <div class="bg-black border border-terminal-border p-6 rounded w-96 shadow-2xl shadow-green-900/20">
+        <h2 class="text-terminal-green font-bold mb-4 text-lg">EDIT PATIENT INFO</h2>
+        <form id="editPatientForm" class="flex flex-col gap-3">
+            <input type="text" name="name" value="{{ patient.name }}" required
+                class="bg-white/5 border border-terminal-border px-3 py-2 text-white focus:border-terminal-green outline-none rounded">
+            <div class="flex gap-2">
+                <input type="number" name="age" value="{{ patient.age }}" required
+                    class="bg-white/5 border border-terminal-border px-3 py-2 text-white focus:border-terminal-green outline-none rounded w-1/2">
+                <select name="sex"
+                    class="bg-white/5 border border-terminal-border px-3 py-2 text-white focus:border-terminal-green outline-none rounded w-1/2">
+                    <option value="M" {% if patient.sex=='M' %}selected{% endif %}>Male</option>
+                    <option value="F" {% if patient.sex=='F' %}selected{% endif %}>Female</option>
+                </select>
+            </div>
+            <input type="text" name="condition" value="{{ patient.condition }}" required
+                class="bg-white/5 border border-terminal-border px-3 py-2 text-white focus:border-terminal-green outline-none rounded">
+            <select name="status"
+                class="bg-white/5 border border-terminal-border px-3 py-2 text-white focus:border-terminal-green outline-none rounded">
+                <option value="Stable" {% if patient.status=='Stable' %}selected{% endif %}>Stable</option>
+                <option value="Monitoring" {% if patient.status=='Monitoring' %}selected{% endif %}>Monitoring</option>
+                <option value="Critical" {% if patient.status=='Critical' %}selected{% endif %}>Critical</option>
+            </select>
+            <input type="text" name="allergies"
+                value="{{ patient.allergies|join(', ') if patient.allergies else 'None' }}"
+                placeholder="Allergies (comma-separated)"
+                class="bg-white/5 border border-terminal-border px-3 py-2 text-white focus:border-terminal-green outline-none rounded">
+            <select name="renal_function"
+                class="bg-white/5 border border-terminal-border px-3 py-2 text-white focus:border-terminal-green outline-none rounded">
+                <option value="Normal" {% if patient.renal_function=='Normal' or not patient.renal_function %}selected{%
+                    endif %}>Renal: Normal</option>
+                <option value="Mild Impairment" {% if patient.renal_function=='Mild Impairment' %}selected{% endif %}>
+                    Renal: Mild Impairment</option>
+                <option value="Moderate Impairment" {% if patient.renal_function=='Moderate Impairment' %}selected{%
+                    endif %}>Renal: Moderate Impairment</option>
+                <option value="Severe Impairment" {% if patient.renal_function=='Severe Impairment' %}selected{% endif
+                    %}>Renal: Severe Impairment</option>
+            </select>
+            <select name="hepatic_function"
+                class="bg-white/5 border border-terminal-border px-3 py-2 text-white focus:border-terminal-green outline-none rounded">
+                <option value="Normal" {% if patient.hepatic_function=='Normal' or not patient.hepatic_function
+                    %}selected{% endif %}>Hepatic: Normal</option>
+                <option value="Mild Impairment" {% if patient.hepatic_function=='Mild Impairment' %}selected{% endif %}>
+                    Hepatic: Mild Impairment</option>
+                <option value="Moderate Impairment" {% if patient.hepatic_function=='Moderate Impairment' %}selected{%
+                    endif %}>Hepatic: Moderate Impairment</option>
+            </select>
+            <div class="flex gap-2 mt-2">
+                <button type="button" id="btn-cancel-edit"
+                    class="flex-1 bg-white/10 text-white py-2 rounded hover:bg-white/20 transition">CANCEL</button>
+                <button type="submit"
+                    class="flex-1 bg-terminal-green text-black font-bold py-2 rounded hover:bg-green-400 transition">SAVE</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Add Medication Modal -->
+<div id="addMedicationModal"
+    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <div class="bg-black border border-terminal-border p-6 rounded w-96 shadow-2xl shadow-green-900/20">
+        <h2 class="text-terminal-green font-bold mb-4 text-lg">ADD MEDICATION</h2>
+        <form id="addMedicationForm" class="flex flex-col gap-3">
+            <input type="text" name="name" placeholder="Medication Name" required
+                class="bg-white/5 border border-terminal-border px-3 py-2 text-white focus:border-terminal-green outline-none rounded">
+            <input type="text" name="class" placeholder="Drug Class" required
+                class="bg-white/5 border border-terminal-border px-3 py-2 text-white focus:border-terminal-green outline-none rounded">
+            <input type="number" name="cost" placeholder="Cost (optional)"
+                class="bg-white/5 border border-terminal-border px-3 py-2 text-white focus:border-terminal-green outline-none rounded">
+            <div class="flex gap-2 mt-2">
+                <button type="button" id="btn-cancel-add-med"
+                    class="flex-1 bg-white/10 text-white py-2 rounded hover:bg-white/20 transition">CANCEL</button>
+                <button type="submit"
+                    class="flex-1 bg-terminal-green text-black font-bold py-2 rounded hover:bg-green-400 transition">ADD</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
+<!-- Add/Edit Timeline Event Modal -->
+<div id="timelineEventModal"
+    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <div class="bg-black border border-terminal-border p-6 rounded w-96 shadow-2xl shadow-green-900/20">
+        <h2 id="timeline-modal-title" class="text-terminal-green font-bold mb-4 text-lg">ADD TIMELINE EVENT</h2>
+        <form id="timelineEventForm" class="flex flex-col gap-3">
+            <input type="hidden" id="timeline-event-index" value="">
+            <input type="date" name="date" id="timeline-event-date" required
+                class="bg-white/5 border border-terminal-border px-3 py-2 text-white focus:border-terminal-green outline-none rounded">
+            <input type="text" name="event" id="timeline-event-name" placeholder="Event Type" required
+                class="bg-white/5 border border-terminal-border px-3 py-2 text-white focus:border-terminal-green outline-none rounded">
+            <textarea name="notes" id="timeline-event-notes" placeholder="Notes" rows="3"
+                class="bg-white/5 border border-terminal-border px-3 py-2 text-white focus:border-terminal-green outline-none rounded"></textarea>
+
+            <!-- File Upload Section -->
+            <div class="border-t border-gray-700 pt-3">
+                <label class="text-gray-400 text-xs font-bold mb-2 block">ATTACH REPORT (OPTIONAL)</label>
+                <label for="timeline-event-file" class="cursor-pointer block">
+                    <div
+                        class="bg-white/5 border border-terminal-border px-3 py-2 rounded text-sm text-gray-400 hover:border-terminal-green transition text-center">
+                        <span id="timeline-event-file-label">📎 Choose File (PDF, JPG, PNG)</span>
+                    </div>
+                    <input type="file" id="timeline-event-file" accept=".jpg,.jpeg,.png,.pdf" class="hidden">
+                </label>
+                <div id="timeline-event-file-preview" class="hidden text-xs text-gray-400 mt-2"></div>
+            </div>
+
+            <div class="flex gap-2 mt-2">
+                <button type="button" id="btn-cancel-timeline"
+                    class="flex-1 bg-white/10 text-white py-2 rounded hover:bg-white/20 transition">CANCEL</button>
+                <button type="submit"
+                    class="flex-1 bg-terminal-green text-black font-bold py-2 rounded hover:bg-green-400 transition">SAVE</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Clinical Notes Modal (REDESIGNED) -->
+<div id="clinicalNotesModal"
+    class="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div
+        class="bg-gray-900 border border-terminal-green/30 rounded-lg max-w-5xl w-full max-h-[95vh] overflow-hidden shadow-2xl shadow-green-900/20 flex flex-col">
+
+        <!-- Header -->
+        <div class="flex justify-between items-center p-5 border-b border-white/10 bg-black/40">
+            <h2 class="text-terminal-green font-bold text-xl flex items-center gap-3 tracking-wider">
+                <i data-lucide="file-text" class="w-5 h-5"></i>
+                CLINICAL_DOCUMENTATION_CENTER
+            </h2>
+            <button onclick="closeClinicalNotes()"
+                class="text-gray-500 hover:text-white transition text-2xl w-8 h-8 flex items-center justify-center rounded hover:bg-white/10">&times;</button>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="flex-1 overflow-hidden flex">
+
+            <!-- Left: Controls -->
+            <div class="w-80 border-r border-white/10 p-5 flex flex-col gap-4 bg-black/20">
+                <div class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-2">DOCUMENT TYPE</div>
+
+                <!-- Document Type Selection -->
+                <div class="flex gap-2">
+                    <button onclick="setDocType('summary')" id="docTypeSummary"
+                        class="flex-1 py-3 px-3 text-xs font-bold rounded border-2 border-terminal-green bg-terminal-green/20 text-terminal-green transition-all flex flex-col items-center gap-1">
+                        <i data-lucide="user" class="w-4 h-4"></i>
+                        PATIENT SUMMARY
+                    </button>
+                    <button onclick="setDocType('notes')" id="docTypeNotes"
+                        class="flex-1 py-3 px-3 text-xs font-bold rounded border-2 border-white/20 bg-transparent text-gray-400 hover:border-white/40 transition-all flex flex-col items-center gap-1">
+                        <i data-lucide="clipboard" class="w-4 h-4"></i>
+                        CLINICAL NOTES
+                    </button>
+                </div>
+
+                <!-- Special Instructions -->
+                <div>
+                    <div
+                        class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-2 flex items-center gap-2">
+                        <i data-lucide="message-square" class="w-3 h-3"></i> SPECIAL INSTRUCTIONS
+                    </div>
+                    <textarea id="specialInstructions" rows="5" placeholder="Enter any specific guidelines, focus areas, or formatting preferences for the document...
+
+Example:
+- Focus on cardiac history
+- Include medication reconciliation
+- Highlight recent lab abnormalities"
+                        class="w-full bg-black/60 border border-white/10 px-3 py-3 text-white text-sm rounded focus:border-terminal-green outline-none resize-none font-mono placeholder-gray-600"></textarea>
+                </div>
+
+                <!-- Generate Button -->
+                <button onclick="generateDocument()" id="btnGenerateDoc"
+                    class="bg-terminal-green text-black font-bold px-4 py-3 rounded hover:bg-green-400 transition flex justify-center items-center gap-2 text-sm">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i>
+                    GENERATE DOCUMENT
+                </button>
+
+                <div class="border-t border-white/10 pt-4 mt-2">
+                    <div class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-3">EXPORT OPTIONS</div>
+
+                    <button onclick="downloadPDF()" id="btnDownloadPDF"
+                        class="w-full bg-white/10 border border-white/20 text-white font-bold px-4 py-2.5 rounded hover:bg-white/20 transition flex justify-center items-center gap-2 text-xs mb-2 disabled:opacity-30 disabled:cursor-not-allowed"
+                        disabled>
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        DOWNLOAD PDF
+                    </button>
+
+                    <button onclick="copyToClipboard()" id="btnCopyDoc"
+                        class="w-full bg-white/5 border border-white/10 text-gray-400 font-bold px-4 py-2 rounded hover:bg-white/10 hover:text-white transition flex justify-center items-center gap-2 text-xs disabled:opacity-30 disabled:cursor-not-allowed"
+                        disabled>
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                        COPY TO CLIPBOARD
+                    </button>
+                </div>
+
+                <!-- Patient Info Summary -->
+                <div class="mt-auto pt-4 border-t border-white/10">
+                    <div class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-2">PATIENT CONTEXT
+                    </div>
+                    <div class="bg-black/40 rounded p-3 space-y-1 text-xs">
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Name:</span>
+                            <span class="text-white font-bold">{{ patient.name }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">ID:</span>
+                            <span class="text-terminal-green font-mono">#{{ patient.id }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Condition:</span>
+                            <span class="text-white">{{ patient.condition }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Preview/Editor -->
+            <div class="flex-1 flex flex-col bg-black/30">
+                <div class="p-4 border-b border-white/10 flex justify-between items-center">
+                    <div class="text-[10px] text-gray-500 uppercase tracking-widest font-bold flex items-center gap-2">
+                        <i data-lucide="eye" class="w-3 h-3"></i> DOCUMENT PREVIEW
+                        <span class="text-[8px] text-yellow-500 ml-2">(EDITABLE)</span>
+                    </div>
+                    <div id="docStatus" class="text-[10px] text-gray-600">Awaiting generation...</div>
+                </div>
+
+                <!-- Document Preview Area -->
+                <div class="flex-1 overflow-auto p-4">
+                    <div id="documentPreview"
+                        class="bg-white text-black p-8 rounded shadow-lg min-h-full font-serif text-sm leading-relaxed"
+                        contenteditable="true" style="min-height: 600px;">
+                        <!-- Placeholder -->
+                        <div class="text-center text-gray-400 py-20">
+                            <div class="text-6xl mb-4 opacity-20">📄</div>
+                            <div class="text-lg font-bold text-gray-500 mb-2">No Document Generated</div>
+                            <div class="text-sm text-gray-400">Select a document type and click "Generate Document" to
+                                create your clinical documentation.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PDF Generation Script (using html2pdf.js CDN) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<script>
+    const container = document.getElementById('patient-container');
+    const patientId = parseInt(container.getAttribute('data-patient-id'));
+
+    function toggleModal(modalId, show) {
+        const modal = document.getElementById(modalId);
+        if (show) modal.classList.remove('hidden');
+        else modal.classList.add('hidden');
+    }
+
+    function updateVitalTimestamp(ts) {
+        const el = document.getElementById('vitals-timestamp');
+        if (el) el.textContent = ts;
+    }
+
+    async function saveVital(vitalName, vitalData) {
+        try {
+            const res = await fetch('/api/patients/' + patientId, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ vitals: vitalData })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.vitals?.recorded_at) updateVitalTimestamp(data.vitals.recorded_at);
+                return true;
+            }
+            alert('Failed to update vital');
+            return false;
+        } catch (e) {
+            console.error(e);
+            alert('System error');
+            return false;
+        }
+    }
+
+    function setupVitalEditing() {
+        document.querySelectorAll('.editable-vital').forEach(vitalEl => {
+            vitalEl.addEventListener('click', function (e) {
+                if (e.target.tagName === 'INPUT') return;
+                const displayEl = this.querySelector('.vital-display');
+                const editEl = this.querySelector('.vital-edit');
+                displayEl.classList.add('hidden');
+                editEl.classList.remove('hidden');
+                const firstInput = editEl.querySelector('input');
+                if (firstInput) {
+                    firstInput.focus();
+                    firstInput.select();
+                }
+            });
+
+            const inputs = vitalEl.querySelectorAll('input');
+            inputs.forEach(input => {
+                input.addEventListener('blur', () => setTimeout(() => saveAndHideEdit(vitalEl), 100));
+                input.addEventListener('keypress', e => { if (e.key === 'Enter') saveAndHideEdit(vitalEl); });
+            });
+        });
+    }
+
+    async function saveAndHideEdit(vitalEl) {
+        const displayEl = vitalEl.querySelector('.vital-display');
+        const editEl = vitalEl.querySelector('.vital-edit');
+        const vitalName = vitalEl.dataset.vital;
+        let vitalData = {};
+
+        if (vitalName === 'bp') {
+            const sysVal = editEl.querySelector('.vital-input-sys').value;
+            const diaVal = editEl.querySelector('.vital-input-dia').value;
+            vitalData.bp_systolic = parseInt(sysVal);
+            vitalData.bp_diastolic = parseInt(diaVal);
+            displayEl.innerHTML = sysVal + '/' + diaVal;
+        } else {
+            const val = editEl.querySelector('.vital-input').value;
+            vitalData[vitalName] = vitalName === 'temp' ? parseFloat(val) : parseInt(val);
+            if (vitalName === 'heart_rate') displayEl.innerHTML = val + ' <span class="text-xs">BPM</span>';
+            else if (vitalName === 'spO2') displayEl.textContent = val + '%';
+            else if (vitalName === 'temp') displayEl.textContent = val + '°F';
+        }
+
+        const success = await saveVital(vitalName, vitalData);
+        if (success) {
+            editEl.classList.add('hidden');
+            displayEl.classList.remove('hidden');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        setupVitalEditing();
+
+        // Patient info edit
+        document.getElementById('btn-edit-details').addEventListener('click', () => toggleModal('editPatientModal', true));
+        document.getElementById('btn-cancel-edit').addEventListener('click', () => toggleModal('editPatientModal', false));
+        document.getElementById('btn-start-simulation').addEventListener('click', function () {
+            window.location.href = '/simulation?patient_id=' + this.getAttribute('data-patient-id');
+        });
+
+        document.getElementById('editPatientForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = {};
+            for (let [key, value] of formData.entries()) data[key] = value;
+            try {
+                const res = await fetch('/api/patients/' + patientId, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) window.location.reload();
+                else alert('Failed to update patient');
+            } catch (e) {
+                console.error(e);
+                alert('System error');
+            }
+        });
+
+        // Medication management
+        document.getElementById('btn-toggle-history').addEventListener('click', function () {
+            const historyDiv = document.getElementById('medication-history');
+            const arrow = document.getElementById('history-arrow');
+            if (historyDiv.classList.contains('hidden')) {
+                historyDiv.classList.remove('hidden');
+                arrow.textContent = '▼';
+            } else {
+                historyDiv.classList.add('hidden');
+                arrow.textContent = '▶';
+            }
+        });
+
+        // Pharmacogenomics toggle
+        const pgxToggle = document.getElementById('btn-toggle-pgx');
+        if (pgxToggle) {
+            pgxToggle.addEventListener('click', function () {
+                const pgxContent = document.getElementById('pgx-content');
+                const pgxArrow = document.getElementById('pgx-arrow');
+                if (pgxContent.classList.contains('hidden')) {
+                    pgxContent.classList.remove('hidden');
+                    pgxArrow.textContent = '▼';
+                } else {
+                    pgxContent.classList.add('hidden');
+                    pgxArrow.textContent = '▶';
+                }
+            });
+        }
+
+        // Evidence Timeline toggle
+        const evidenceTimelineToggle = document.getElementById('btn-toggle-evidence-timeline');
+        if (evidenceTimelineToggle) {
+            let timelineLoaded = false;
+            evidenceTimelineToggle.addEventListener('click', async function () {
+                const content = document.getElementById('evidence-timeline-content');
+                const arrow = document.getElementById('evidence-timeline-arrow');
+
+                if (content.classList.contains('hidden')) {
+                    content.classList.remove('hidden');
+                    arrow.textContent = '▼';
+
+                    // Load timeline data if not loaded yet
+                    if (!timelineLoaded) {
+                        await loadEvidenceTimeline();
+                        timelineLoaded = true;
+                    }
+                } else {
+                    content.classList.add('hidden');
+                    arrow.textContent = '▶';
+                }
+            });
+        }
+
+        document.getElementById('btn-add-medication').addEventListener('click', () => toggleModal('addMedicationModal', true));
+        document.getElementById('btn-cancel-add-med').addEventListener('click', () => toggleModal('addMedicationModal', false));
+
+        document.getElementById('addMedicationForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = {
+                name: formData.get('name'),
+                class: formData.get('class'),
+                cost: parseInt(formData.get('cost')) || 0
+            };
+            try {
+                const res = await fetch('/api/patients/' + patientId + '/medications', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) window.location.reload();
+                else alert('Failed to add medication');
+            } catch (e) {
+                console.error(e);
+                alert('System error');
+            }
+        });
+
+        document.querySelectorAll('.btn-stop-med').forEach(btn => {
+            btn.addEventListener('click', async function () {
+                const medName = this.getAttribute('data-med-name');
+                const reason = prompt('Reason for stopping ' + medName + ':', '');
+                if (reason !== null) {
+                    try {
+                        const res = await fetch('/api/patients/' + patientId + '/medications/' + encodeURIComponent(medName), {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ reason: reason })
+                        });
+                        if (res.ok) window.location.reload();
+                        else alert('Failed to stop medication');
+                    } catch (e) {
+                        console.error(e);
+                        alert('System error');
+                    }
+                }
+            });
+        });
+
+        // Timeline management
+        let selectedTimelineFile = null;
+
+        document.getElementById('btn-add-event').addEventListener('click', () => {
+            document.getElementById('timeline-modal-title').textContent = 'ADD TIMELINE EVENT';
+            document.getElementById('timeline-event-index').value = '';
+            document.getElementById('timeline-event-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('timeline-event-name').value = '';
+            document.getElementById('timeline-event-notes').value = '';
+            selectedTimelineFile = null;
+            document.getElementById('timeline-event-file').value = '';
+            document.getElementById('timeline-event-file-label').textContent = '📎 Choose File (PDF, JPG, PNG)';
+            document.getElementById('timeline-event-file-preview').classList.add('hidden');
+            toggleModal('timelineEventModal', true);
+        });
+
+        document.getElementById('btn-cancel-timeline').addEventListener('click', () => toggleModal('timelineEventModal', false));
+
+        document.querySelectorAll('.btn-edit-event').forEach(btn => {
+            btn.addEventListener('click', function () {
+                document.getElementById('timeline-modal-title').textContent = 'EDIT TIMELINE EVENT';
+                document.getElementById('timeline-event-index').value = this.getAttribute('data-event-index');
+                document.getElementById('timeline-event-date').value = this.getAttribute('data-event-date');
+                document.getElementById('timeline-event-name').value = this.getAttribute('data-event-name');
+                document.getElementById('timeline-event-notes').value = this.getAttribute('data-event-notes');
+                selectedTimelineFile = null;
+                document.getElementById('timeline-event-file').value = '';
+                document.getElementById('timeline-event-file-label').textContent = '📎 Choose File (PDF, JPG, PNG)';
+                document.getElementById('timeline-event-file-preview').classList.add('hidden');
+                toggleModal('timelineEventModal', true);
+            });
+        });
+
+        document.querySelectorAll('.btn-delete-event').forEach(btn => {
+            btn.addEventListener('click', async function () {
+                if (!confirm('Delete this timeline event?')) return;
+                const eventIndex = this.getAttribute('data-event-index');
+                try {
+                    const res = await fetch('/api/patients/' + patientId + '/timeline/' + eventIndex, {
+                        method: 'DELETE'
+                    });
+                    if (res.ok) window.location.reload();
+                    else alert('Failed to delete event');
+                } catch (e) {
+                    console.error(e);
+                    alert('System error');
+                }
+            });
+        });
+
+        // File upload handler for timeline events
+        document.getElementById('timeline-event-file').addEventListener('change', function (e) {
+            if (e.target.files && e.target.files.length > 0) {
+                selectedTimelineFile = e.target.files[0];
+                const fileSizeKB = (selectedTimelineFile.size / 1024).toFixed(1);
+                document.getElementById('timeline-event-file-label').textContent = selectedTimelineFile.name;
+                document.getElementById('timeline-event-file-preview').textContent = `File size: ${fileSizeKB}KB`;
+                document.getElementById('timeline-event-file-preview').classList.remove('hidden');
+            }
+        });
+
+        document.getElementById('timelineEventForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = {
+                date: formData.get('date'),
+                event: formData.get('event'),
+                notes: formData.get('notes')
+            };
+            const eventIndex = document.getElementById('timeline-event-index').value;
+
+            try {
+                // First save the timeline event
+                let res;
+                if (eventIndex === '') {
+                    res = await fetch('/api/patients/' + patientId + '/timeline', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                } else {
+                    res = await fetch('/api/patients/' + patientId + '/timeline/' + eventIndex, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                }
+
+                if (!res.ok) {
+                    alert('Failed to save timeline event');
+                    return;
+                }
+
+                // If there's a file to upload AND we're editing an existing event, upload it
+                if (selectedTimelineFile && eventIndex !== '') {
+                    const fileFormData = new FormData();
+                    fileFormData.append('file', selectedTimelineFile);
+
+                    const uploadRes = await fetch(`/api/patients/${patientId}/timeline/${eventIndex}/attachments`, {
+                        method: 'POST',
+                        body: fileFormData
+                    });
+
+                    if (!uploadRes.ok) {
+                        alert('Event saved but file upload failed');
+                    }
+                }
+
+                window.location.reload();
+            } catch (e) {
+                console.error(e);
+                alert('Failed to save timeline event');
+            }
+        });
+    });
+
+    // ========== CLINICAL NOTES FUNCTIONS (REDESIGNED) ==========
+
+    let currentDocType = 'summary';
+    let documentGenerated = false;
+
+    function openClinicalNotes() {
+        document.getElementById('clinicalNotesModal').classList.remove('hidden');
+        lucide.createIcons();
+    }
+
+    function closeClinicalNotes() {
+        document.getElementById('clinicalNotesModal').classList.add('hidden');
+    }
+
+    function setDocType(type) {
+        currentDocType = type;
+        const btnSummary = document.getElementById('docTypeSummary');
+        const btnNotes = document.getElementById('docTypeNotes');
+
+        if (type === 'summary') {
+            btnSummary.className = 'flex-1 py-3 px-3 text-xs font-bold rounded border-2 border-terminal-green bg-terminal-green/20 text-terminal-green transition-all flex flex-col items-center gap-1';
+            btnNotes.className = 'flex-1 py-3 px-3 text-xs font-bold rounded border-2 border-white/20 bg-transparent text-gray-400 hover:border-white/40 transition-all flex flex-col items-center gap-1';
+        } else {
+            btnNotes.className = 'flex-1 py-3 px-3 text-xs font-bold rounded border-2 border-terminal-green bg-terminal-green/20 text-terminal-green transition-all flex flex-col items-center gap-1';
+            btnSummary.className = 'flex-1 py-3 px-3 text-xs font-bold rounded border-2 border-white/20 bg-transparent text-gray-400 hover:border-white/40 transition-all flex flex-col items-center gap-1';
+        }
+        lucide.createIcons();
+    }
+
+    async function generateDocument() {
+        const preview = document.getElementById('documentPreview');
+        const status = document.getElementById('docStatus');
+        const specialInstructions = document.getElementById('specialInstructions').value;
+
+        status.textContent = 'Generating...';
+        status.className = 'text-[10px] text-yellow-500 animate-pulse';
+        preview.innerHTML = '<div class="text-center py-20"><div class="inline-block w-8 h-8 border-4 border-gray-300 border-t-green-500 rounded-full animate-spin mb-4"></div><div class="text-gray-500">AI is generating your document...</div></div>';
+
+        try {
+            const endpoint = currentDocType === 'summary' ? '/api/generate-patient-summary' : '/api/generate-clinical-notes';
+
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    patient_id: patientId,
+                    special_instructions: specialInstructions
+                })
+            });
+
+            const data = await res.json();
+
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            // Render document in preview
+            const docTitle = currentDocType === 'summary' ? 'PATIENT SUMMARY' : 'CLINICAL NOTES';
+            const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+            preview.innerHTML = `
+                <div style="font-family: 'Times New Roman', Times, serif; color: #000;">
+                    <!-- Header -->
+                    <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px;">
+                        <h1 style="margin: 0; font-size: 24px; font-weight: bold; letter-spacing: 2px;">CLINICAL COMMAND DECK</h1>
+                        <div style="font-size: 12px; color: #666; margin-top: 5px;">Medical Documentation System</div>
+                    </div>
+                    
+                    <!-- Document Title -->
+                    <div style="text-align: center; margin-bottom: 25px;">
+                        <h2 style="margin: 0; font-size: 18px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">${docTitle}</h2>
+                        <div style="font-size: 11px; color: #888; margin-top: 5px;">Generated: ${today}</div>
+                    </div>
+                    
+                    <!-- Patient Info Box -->
+                    <div style="background: #f5f5f5; border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px;">
+                            <div><strong>Patient Name:</strong> ${data.patient_name || '{{ patient.name }}'}</div>
+                            <div><strong>Patient ID:</strong> #${data.patient_id || patientId}</div>
+                            <div><strong>Age/Sex:</strong> ${data.age || '{{ patient.age }}'} yrs / ${data.sex || '{{ patient.sex }}'}</div>
+                            <div><strong>Primary Condition:</strong> ${data.condition || '{{ patient.condition }}'}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Main Content -->
+                    <div style="line-height: 1.8; font-size: 13px; text-align: justify;">
+                        ${data.content || data.full_text || '<p>No content generated.</p>'}
+                    </div>
+                    
+                    <!-- Footer -->
+                    <div style="margin-top: 40px; padding-top: 15px; border-top: 1px solid #ddd; font-size: 10px; color: #888; text-align: center;">
+                        <div>This document was generated by Clinical Command Deck AI Documentation System</div>
+                        <div style="margin-top: 5px;">Confidential Medical Record - For Authorized Use Only</div>
+                    </div>
+                </div>
+            `;
+
+            documentGenerated = true;
+            status.textContent = 'Document ready - Click to edit';
+            status.className = 'text-[10px] text-terminal-green';
+
+            // Enable export buttons
+            document.getElementById('btnDownloadPDF').disabled = false;
+            document.getElementById('btnCopyDoc').disabled = false;
+
+        } catch (e) {
+            console.error('Document generation error:', e);
+            preview.innerHTML = `<div class="text-center py-20 text-red-500"><div class="text-4xl mb-4">⚠</div><div class="font-bold">Generation Failed</div><div class="text-sm mt-2">${e.message || 'Please try again'}</div></div>`;
+            status.textContent = 'Generation failed';
+            status.className = 'text-[10px] text-red-500';
+        }
+    }
+
+    function downloadPDF() {
+        if (!documentGenerated) return;
+
+        const element = document.getElementById('documentPreview');
+        const patientName = '{{ patient.name }}'.replace(/[^a-zA-Z0-9]/g, '_');
+        const docType = currentDocType === 'summary' ? 'Summary' : 'Notes';
+        const filename = `${patientName}_${docType}_${new Date().toISOString().split('T')[0]}.pdf`;
+
+        const opt = {
+            margin: [10, 10, 10, 10],
+            filename: filename,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        // Show loading state
+        const btn = document.getElementById('btnDownloadPDF');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> GENERATING...';
+        btn.disabled = true;
+
+        html2pdf().set(opt).from(element).save().then(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            lucide.createIcons();
+        });
+    }
+
+    function copyToClipboard() {
+        if (!documentGenerated) return;
+
+        const element = document.getElementById('documentPreview');
+        const text = element.innerText;
+
+        navigator.clipboard.writeText(text).then(() => {
+            const btn = document.getElementById('btnCopyDoc');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i data-lucide="check" class="w-4 h-4 text-green-500"></i> COPIED!';
+            lucide.createIcons();
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                lucide.createIcons();
+            }, 2000);
+        }).catch(err => {
+            console.error('Copy failed:', err);
+            alert('Failed to copy to clipboard');
+        });
+    }
+
+
+    // ========== EVIDENCE TIMELINE FUNCTIONS ==========
+
+    async function loadEvidenceTimeline() {
+        try {
+            const res = await fetch(`/api/patients/${patientId}/evidence-timeline`);
+            const data = await res.json();
+            renderEvidenceTimeline(data);
+        } catch (e) {
+            console.error('Evidence timeline error:', e);
+            document.getElementById('evidence-timeline-loading').innerHTML =
+                '<div class="text-red-400 text-sm">Failed to load evidence timeline</div>';
+        }
+    }
+
+    function renderEvidenceTimeline(data) {
+        // Hide loading, show data
+        document.getElementById('evidence-timeline-loading').classList.add('hidden');
+        document.getElementById('evidence-timeline-data').classList.remove('hidden');
+
+        // Render current standard
+        if (data.current_standard) {
+            document.getElementById('current-standard-text').textContent = data.current_standard;
+        } else {
+            document.getElementById('current-standard-text').textContent =
+                'Evidence-based guidelines for this condition are available. Click "Compare Guidelines" for details.';
+        }
+
+        // Render timeline items
+        const timelineContainer = document.getElementById('timeline-items');
+        const trials = data.timeline || [];
+
+        if (trials.length > 0) {
+            timelineContainer.innerHTML = trials.map((trial, idx) => `
+                <div class="relative flex gap-3 group">
+                    <div class="absolute -left-8 top-1 w-3 h-3 rounded-full ${idx === trials.length - 1 ? 'bg-terminal-green ring-2 ring-terminal-green/30' : 'bg-blue-500'} group-hover:scale-125 transition-transform"></div>
+                    <div class="flex-1 bg-white/[0.02] border border-white/10 rounded p-3 hover:border-blue-500/50 transition-all">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="text-white font-bold text-sm">${trial.name}</span>
+                                <span class="text-gray-500 text-xs ml-2">(${trial.year})</span>
+                            </div>
+                        </div>
+                        <div class="text-gray-400 text-xs mt-1">${trial.finding}</div>
+                        ${trial.impact ? `<div class="text-terminal-green/70 text-[10px] mt-1">→ ${trial.impact}</div>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            timelineContainer.innerHTML = '<div class="text-gray-500 text-sm">No landmark trials found for this condition yet.</div>';
+        }
+
+        // Render knowledge graph
+        const graphContainer = document.getElementById('knowledge-graph-nodes');
+        if (data.knowledge_graph && data.knowledge_graph.nodes) {
+            const nodes = data.knowledge_graph.nodes;
+            graphContainer.innerHTML = nodes.map(node => {
+                let colorClass = 'bg-gray-700 text-gray-300';
+                if (node.type === 'drug_class') colorClass = 'bg-terminal-green/20 text-terminal-green border border-terminal-green/30';
+                else if (node.type === 'trial') colorClass = 'bg-blue-500/20 text-blue-400 border border-blue-500/30';
+                else if (node.type === 'mechanism') colorClass = 'bg-purple-500/20 text-purple-400 border border-purple-500/30';
+                else if (node.type === 'outcome') colorClass = 'bg-orange-500/20 text-orange-400 border border-orange-500/30';
+
+                return `<div class="px-3 py-1.5 rounded-full text-xs font-bold ${colorClass} hover:scale-105 transition-transform cursor-default">${node.label}</div>`;
+            }).join('');
+
+            // Draw SVG graph
+            drawKnowledgeGraph(data.knowledge_graph.nodes, data.knowledge_graph.edges || []);
+        } else {
+            // Generate default graph for condition
+            const condition = '{{ patient.condition }}';
+            const defaultNodes = [
+                { id: 'condition', label: condition, type: 'condition' },
+                { id: 'therapy', label: 'Standard Therapy', type: 'drug_class' },
+                { id: 'guidelines', label: 'Guidelines', type: 'mechanism' },
+                { id: 'outcomes', label: 'Clinical Outcomes', type: 'outcome' },
+                { id: 'trials', label: 'Landmark Trials', type: 'trial' }
+            ];
+            const defaultEdges = [
+                { from: 'condition', to: 'therapy' },
+                { from: 'therapy', to: 'outcomes' },
+                { from: 'guidelines', to: 'therapy' },
+                { from: 'trials', to: 'guidelines' }
+            ];
+            drawKnowledgeGraph(defaultNodes, defaultEdges);
+        }
+
+        // Render emerging therapies
+        if (data.emerging_therapies && data.emerging_therapies.length > 0) {
+            document.getElementById('emerging-therapies-section').classList.remove('hidden');
+            document.getElementById('emerging-therapies-list').innerHTML = data.emerging_therapies.map(therapy =>
+                `<span class="px-2 py-1 bg-orange-500/20 text-orange-400 text-xs rounded">${therapy}</span>`
+            ).join('');
+        }
+
+        // Render patient relevance
+        if (data.patient_relevance) {
+            document.getElementById('patient-relevance-text').innerHTML = `
+                <span class="text-terminal-green">${data.patient_relevance.summary}</span>
+                ${data.patient_relevance.applicable_trials && data.patient_relevance.applicable_trials.length > 0 ?
+                    `<div class="mt-2 text-xs text-gray-500">Key applicable trials: ${data.patient_relevance.applicable_trials.slice(0, 3).map(t => t.trial).join(', ')}</div>` : ''
+                }
+            `;
+        } else {
+            document.getElementById('patient-relevance-text').textContent =
+                'This patient\'s condition has established evidence-based treatment options.';
+        }
+
+        // Refresh icons
+        lucide.createIcons();
+    }
+
+    // Draw SVG knowledge graph
+    function drawKnowledgeGraph(nodes, edges) {
+        const svg = document.getElementById('knowledge-graph-svg');
+        if (!svg) return;
+
+        // Clear existing content (keep defs)
+        const defs = svg.querySelector('defs');
+        svg.innerHTML = '';
+        if (defs) svg.appendChild(defs);
+
+        const width = svg.clientWidth || 500;
+        const height = svg.clientHeight || 180;
+
+        // Position nodes in a circular/radial layout
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const radius = Math.min(width, height) * 0.35;
+
+        // Calculate positions for each node
+        const nodePositions = {};
+        nodes.forEach((node, i) => {
+            const angle = (i / nodes.length) * 2 * Math.PI - Math.PI / 2;
+            nodePositions[node.id] = {
+                x: centerX + radius * Math.cos(angle),
+                y: centerY + radius * Math.sin(angle),
+                ...node
+            };
+        });
+
+        // Draw edges first (so they appear behind nodes)
+        edges.forEach(edge => {
+            const from = nodePositions[edge.from];
+            const to = nodePositions[edge.to];
+            if (!from || !to) return;
+
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', from.x);
+            line.setAttribute('y1', from.y);
+            line.setAttribute('x2', to.x);
+            line.setAttribute('y2', to.y);
+            line.setAttribute('stroke', '#a855f7');
+            line.setAttribute('stroke-opacity', '0.4');
+            line.setAttribute('stroke-width', '1.5');
+            line.setAttribute('marker-end', 'url(#arrowhead-graph)');
+            svg.appendChild(line);
+        });
+
+        // Draw nodes
+        nodes.forEach((node, i) => {
+            const pos = nodePositions[node.id];
+            if (!pos) return;
+
+            // Determine color based on node type
+            let fillColor = '#6b7280'; // gray
+            let strokeColor = '#9ca3af';
+            let textColor = '#d1d5db';
+
+            switch (node.type) {
+                case 'condition':
+                    fillColor = 'rgba(59, 130, 246, 0.3)'; // blue
+                    strokeColor = '#3b82f6';
+                    textColor = '#60a5fa';
+                    break;
+                case 'drug_class':
+                    fillColor = 'rgba(34, 197, 94, 0.3)'; // green
+                    strokeColor = '#22c55e';
+                    textColor = '#4ade80';
+                    break;
+                case 'trial':
+                    fillColor = 'rgba(59, 130, 246, 0.3)'; // blue
+                    strokeColor = '#3b82f6';
+                    textColor = '#60a5fa';
+                    break;
+                case 'mechanism':
+                    fillColor = 'rgba(168, 85, 247, 0.3)'; // purple
+                    strokeColor = '#a855f7';
+                    textColor = '#c084fc';
+                    break;
+                case 'outcome':
+                    fillColor = 'rgba(249, 115, 22, 0.3)'; // orange
+                    strokeColor = '#f97316';
+                    textColor = '#fb923c';
+                    break;
+            }
+
+            // Create group for node
+            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            g.style.cursor = 'pointer';
+
+            // Draw node circle
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', pos.x);
+            circle.setAttribute('cy', pos.y);
+            circle.setAttribute('r', 28);
+            circle.setAttribute('fill', fillColor);
+            circle.setAttribute('stroke', strokeColor);
+            circle.setAttribute('stroke-width', '2');
+            circle.setAttribute('filter', 'url(#glow)');
+
+            // Animate on hover
+            circle.style.transition = 'all 0.3s ease';
+            g.addEventListener('mouseenter', () => {
+                circle.setAttribute('r', 32);
+                circle.setAttribute('stroke-width', '3');
+            });
+            g.addEventListener('mouseleave', () => {
+                circle.setAttribute('r', 28);
+                circle.setAttribute('stroke-width', '2');
+            });
+
+            g.appendChild(circle);
+
+            // Draw node label
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', pos.x);
+            text.setAttribute('y', pos.y);
+            text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('dominant-baseline', 'middle');
+            text.setAttribute('fill', textColor);
+            text.setAttribute('font-size', '9');
+            text.setAttribute('font-weight', 'bold');
+            text.setAttribute('font-family', 'monospace');
+
+            // Truncate long labels
+            const label = node.label.length > 12 ? node.label.substring(0, 10) + '..' : node.label;
+            text.textContent = label;
+            g.appendChild(text);
+
+            svg.appendChild(g);
+        });
+
+        // Add pulsing animation to central node
+        const pulseStyle = document.createElement('style');
+        pulseStyle.textContent = `
+            @keyframes nodePulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.7; }
+            }
+        `;
+        if (!document.getElementById('nodePulseStyle')) {
+            pulseStyle.id = 'nodePulseStyle';
+            document.head.appendChild(pulseStyle);
+        }
+    }
+
+    // Cross-module navigation functions
+    function openEvidenceInLiterature() {
+        const condition = '{{ patient.condition }}';
+        window.location.href = `/literature?query=${encodeURIComponent(condition)}`;
+    }
+
+    function openGuidelinesForCondition() {
+        const condition = '{{ patient.condition }}';
+        // Store in session/localStorage for the literature page to pick up
+        sessionStorage.setItem('guidelineCondition', condition);
+        window.location.href = '/literature#guidelines';
+    }
+
+    function simulateWithEvidence() {
+        window.location.href = `/simulation?patient_id=${patientId}`;
+    }
+</script>
+{% endblock %}

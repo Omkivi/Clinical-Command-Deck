@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinical Command Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'terminal-bg': '#0a0a0a',
+                        'terminal-green': '#00ff00',
+                        'terminal-border': '#333333',
+                    },
+                    fontFamily: {
+                        'mono': ['"JetBrains Mono"', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="bg-terminal-bg text-gray-300 font-mono h-screen flex flex-col overflow-hidden">
+    <!-- Top Bar -->
+    <header class="border-b border-terminal-border p-2 flex justify-between items-center bg-black/50 backdrop-blur">
+        <div class="flex items-center gap-2">
+            <i data-lucide="activity" class="text-terminal-green"></i>
+            <span class="font-bold text-white tracking-wider">CLINICAL COMMAND CENTER</span>
+        </div>
+        <div class="text-xs text-gray-500">SYSTEM STATUS: ONLINE | V1.0.0</div>
+    </header>
+    <!-- Main Layout -->
+    <div class="flex flex-1 overflow-hidden">
+        <!-- Sidebar Navigation -->
+        <nav class="w-16 border-r border-terminal-border flex flex-col items-center py-4 justify-evenly bg-black/20">
+            <a href="{{ url_for('main.index') }}"
+                class="p-2 rounded transition-colors group relative {% if request.endpoint == 'main.index' %}bg-terminal-green/20{% else %}hover:bg-white/10{% endif %}"
+                title="Patients">
+                <i data-lucide="users"
+                    class="{% if request.endpoint == 'main.index' %}text-terminal-green{% else %}text-gray-400 group-hover:text-white{% endif %}"></i>
+            </a>
+            <a href="{{ url_for('main.simulation') }}"
+                class="p-2 rounded transition-colors group relative {% if request.endpoint == 'main.simulation' %}bg-terminal-green/20{% else %}hover:bg-white/10{% endif %}"
+                title="Research/Sim">
+                <i data-lucide="microscope"
+                    class="{% if request.endpoint == 'main.simulation' %}text-terminal-green{% else %}text-gray-400 group-hover:text-white{% endif %}"></i>
+            </a>
+            <a href="{{ url_for('main.optimizer') }}"
+                class="p-2 rounded transition-colors group relative {% if request.endpoint == 'main.optimizer' %}bg-terminal-green/20{% else %}hover:bg-white/10{% endif %}"
+                title="Optimizer">
+                <i data-lucide="network"
+                    class="{% if request.endpoint == 'main.optimizer' %}text-terminal-green{% else %}text-gray-400 group-hover:text-white{% endif %}"></i>
+            </a>
+            <a href="{{ url_for('main.diagnosis') }}"
+                class="p-2 rounded transition-colors group relative {% if request.endpoint == 'main.diagnosis' %}bg-terminal-green/20{% else %}hover:bg-white/10{% endif %}"
+                title="Bayesian Diagnosis">
+                <i data-lucide="stethoscope"
+                    class="{% if request.endpoint == 'main.diagnosis' %}text-terminal-green{% else %}text-gray-400 group-hover:text-white{% endif %}"></i>
+            </a>
+            <a href="{{ url_for('main.lab_reports') }}"
+                class="p-2 rounded transition-colors group relative {% if request.endpoint == 'main.lab_reports' %}bg-terminal-green/20{% else %}hover:bg-white/10{% endif %}"
+                title="Lab & Radiology">
+                <i data-lucide="file-text"
+                    class="{% if request.endpoint == 'main.lab_reports' %}text-terminal-green{% else %}text-gray-400 group-hover:text-white{% endif %}"></i>
+            </a>
+            <a href="/literature"
+                class="p-2 rounded transition-colors group relative {% if request.endpoint == 'main.literature_page' %}bg-terminal-green/20{% else %}hover:bg-white/10{% endif %}"
+                title="Literature Search">
+                <i data-lucide="book-open"
+                    class="{% if request.endpoint == 'main.literature_page' %}text-terminal-green{% else %}text-gray-400 group-hover:text-white{% endif %}"></i>
+            </a>
+
+
+
+        </nav>
+        <!-- Content Area -->
+        <main class="flex-1 overflow-auto p-4 relative">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Voice Copilot Floating Button -->
+    <div id="voiceCopilot" class="fixed bottom-6 right-6 z-50">
+        <button id="voiceBtn" onclick="toggleVoiceCopilot()"
+            class="w-14 h-14 rounded-full bg-gradient-to-br from-terminal-green to-green-600 text-black flex items-center justify-center shadow-lg shadow-green-500/30 hover:scale-110 transition-transform relative">
+            <i data-lucide="mic" class="w-6 h-6"></i>
+            <span id="voiceRing" class="absolute inset-0 rounded-full border-2 border-terminal-green opacity-0"></span>
+        </button>
+
+        <!-- Voice Panel (hidden by default) -->
+        <div id="voicePanel"
+            class="hidden absolute bottom-16 right-0 w-80 bg-gray-900 border border-terminal-green/50 rounded-lg shadow-2xl shadow-green-900/30 overflow-hidden">
+            <div
+                class="bg-terminal-green/10 px-4 py-3 border-b border-terminal-green/30 flex items-center justify-between">
+                <div class="text-terminal-green text-sm font-bold flex items-center gap-2">
+                    <i data-lucide="mic" class="w-4 h-4"></i> VOICE COPILOT
+                </div>
+                <span id="voiceStatus" class="text-[10px] text-gray-500">Ready</span>
+            </div>
+            <div id="voiceTranscript" class="p-4 h-24 overflow-auto text-sm text-gray-400 border-b border-white/10">
+                <div class="text-gray-600 italic">Say or type a command like "Show patients" or "Open diagnosis"...
+                </div>
+            </div>
+            <!-- Text Input Fallback -->
+            <div class="px-4 py-2 border-b border-white/10 bg-black/40">
+                <form onsubmit="handleTextCommand(event)" class="flex gap-2">
+                    <input type="text" id="voiceCommandInput" placeholder="Type command (e.g., 'open optimizer')"
+                        class="flex-1 bg-black border border-terminal-border rounded px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:border-terminal-green outline-none">
+                    <button type="submit"
+                        class="px-3 py-1.5 bg-terminal-green text-black text-xs font-bold rounded hover:bg-green-400 transition">
+                        GO
+                    </button>
+                </form>
+            </div>
+            <div id="voiceResponse" class="p-4 bg-black/40 text-xs text-gray-300 max-h-24 overflow-auto">
+                <div class="text-gray-600">Response will appear here</div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes voicePulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        #voiceBtn.listening #voiceRing {
+            animation: voicePulse 1.5s ease-in-out infinite;
+            opacity: 1;
+        }
+
+        #voiceBtn.listening {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+    </style>
+
+    <script>
+        let voicePanelOpen = false;
+        let recognition = null;
+        let isListening = false;
+
+        function toggleVoiceCopilot() {
+            voicePanelOpen = !voicePanelOpen;
+            document.getElementById('voicePanel').classList.toggle('hidden', !voicePanelOpen);
+
+            if (voicePanelOpen && !isListening) {
+                startListening();
+            } else if (!voicePanelOpen && isListening) {
+                stopListening();
+            }
+        }
+
+        function startListening() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                document.getElementById('voiceTranscript').innerHTML = '<div class="text-red-400">Speech recognition not supported in this browser.</div>';
+                return;
+            }
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => {
+                isListening = true;
+                document.getElementById('voiceBtn').classList.add('listening');
+                document.getElementById('voiceStatus').textContent = 'Listening...';
+                document.getElementById('voiceStatus').className = 'text-[10px] text-green-400 animate-pulse';
+            };
+
+            recognition.onresult = (event) => {
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript;
+                }
+                document.getElementById('voiceTranscript').innerHTML = `<div class="text-white">"${transcript}"</div>`;
+
+                if (event.results[event.resultIndex].isFinal) {
+                    processVoiceCommand(transcript.trim().toLowerCase());
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                let errorMsg = '';
+                let transcriptMsg = '';
+
+                switch (event.error) {
+                    case 'audio-capture':
+                        errorMsg = 'No microphone';
+                        transcriptMsg = '<div class="text-yellow-400">⚠️ No microphone detected. Use the text input below to type commands instead.</div>';
+                        stopListening();
+                        break;
+                    case 'not-allowed':
+                        errorMsg = 'Mic denied';
+                        transcriptMsg = '<div class="text-red-400">🚫 Microphone permission denied. Please allow microphone access or use text input below.</div>';
+                        stopListening();
+                        break;
+                    case 'no-speech':
+                        errorMsg = 'No speech detected';
+                        transcriptMsg = '<div class="text-gray-400">🎤 No speech detected. Try speaking again or use text input.</div>';
+                        break;
+                    case 'network':
+                        errorMsg = 'Network error';
+                        transcriptMsg = '<div class="text-red-400">🌐 Network error. Check your connection.</div>';
+                        break;
+                    default:
+                        errorMsg = event.error;
+                        transcriptMsg = `<div class="text-yellow-400">⚠️ ${event.error}. Try using the text input below.</div>`;
+                }
+
+                document.getElementById('voiceStatus').textContent = errorMsg;
+                document.getElementById('voiceStatus').className = 'text-[10px] text-red-400';
+                document.getElementById('voiceTranscript').innerHTML = transcriptMsg;
+            };
+
+            recognition.onend = () => {
+                if (isListening && voicePanelOpen) {
+                    recognition.start(); // Restart
+                }
+            };
+
+            recognition.start();
+        }
+
+        // Text command fallback handler
+        function handleTextCommand(event) {
+            event.preventDefault();
+            const input = document.getElementById('voiceCommandInput');
+            const command = input.value.trim().toLowerCase();
+
+            if (command) {
+                document.getElementById('voiceTranscript').innerHTML = `<div class="text-white">"${input.value}"</div>`;
+                processVoiceCommand(command);
+                input.value = '';
+            }
+        }
+
+        function stopListening() {
+            isListening = false;
+            if (recognition) {
+                recognition.stop();
+            }
+            document.getElementById('voiceBtn').classList.remove('listening');
+            document.getElementById('voiceStatus').textContent = 'Ready';
+            document.getElementById('voiceStatus').className = 'text-[10px] text-gray-500';
+        }
+
+        function processVoiceCommand(command) {
+            const responseEl = document.getElementById('voiceResponse');
+
+            // Navigation commands
+            if (command.includes('patient') && (command.includes('show') || command.includes('open') || command.includes('go'))) {
+                responseEl.innerHTML = '<div class="text-terminal-green">Navigating to Patients...</div>';
+                setTimeout(() => window.location.href = '/', 500);
+            }
+            else if (command.includes('simulation') || command.includes('simulate')) {
+                responseEl.innerHTML = '<div class="text-terminal-green">Opening Simulation...</div>';
+                setTimeout(() => window.location.href = '/simulation', 500);
+            }
+            else if (command.includes('optimi')) {
+                responseEl.innerHTML = '<div class="text-terminal-green">Opening Optimizer...</div>';
+                setTimeout(() => window.location.href = '/optimizer', 500);
+            }
+            else if (command.includes('diagnos')) {
+                responseEl.innerHTML = '<div class="text-terminal-green">Opening Diagnosis Engine...</div>';
+                setTimeout(() => window.location.href = '/diagnosis', 500);
+            }
+            else if (command.includes('lab') || command.includes('report')) {
+                responseEl.innerHTML = '<div class="text-terminal-green">Opening Lab Reports...</div>';
+                setTimeout(() => window.location.href = '/lab-reports', 500);
+            }
+            else if (command.includes('literature') || command.includes('research')) {
+                responseEl.innerHTML = '<div class="text-terminal-green">Opening Literature Search...</div>';
+                setTimeout(() => window.location.href = '/literature', 500);
+            }
+            else if (command.includes('surgical') || command.includes('risk')) {
+                responseEl.innerHTML = '<div class="text-terminal-green">Opening Surgical Risk...</div>';
+                setTimeout(() => window.location.href = '/surgical-risk', 500);
+            }
+
+
+            else if (command.includes('help')) {
+                responseEl.innerHTML = `<div class="space-y-1">
+                    <div class="text-terminal-green font-bold">Available Commands:</div>
+                    <div>• "Show patients" - Go to patient list</div>
+                    <div>• "Open diagnosis" - Diagnosis engine</div>
+                    <div>• "Open optimizer" - Drug optimizer</div>
+                    <div>• "Open simulation" - Simulation</div>
+
+
+                </div>`;
+            }
+            else {
+                responseEl.innerHTML = `<div class="text-yellow-400">Command not recognized. Say "help" for available commands.</div>`;
+            }
+        }
+
+        lucide.createIcons();
+    </script>
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+</body>
+
+</html>

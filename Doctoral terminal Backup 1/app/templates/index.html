@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="h-full flex flex-col gap-4">
+    <div class="flex justify-between items-center">
+        <h1 class="text-xl font-bold text-white">PATIENT DIRECTORY</h1>
+        <div class="flex gap-2">
+            <input type="text" id="searchInput" placeholder="SEARCH PATIENT ID/NAME..."
+                class="bg-black border border-terminal-border px-3 py-1 text-sm text-white focus:border-terminal-green outline-none w-64 placeholder-gray-600">
+            <button
+                class="bg-terminal-border px-3 py-1 text-sm hover:bg-white/10 transition text-gray-300">FILTER</button>
+            <button onclick="document.getElementById('addPatientModal').classList.remove('hidden')"
+                class="bg-terminal-green text-black font-bold px-3 py-1 text-sm hover:bg-green-400 transition flex items-center gap-1">
+                <i data-lucide="plus" class="w-4 h-4"></i> ADD PATIENT
+            </button>
+        </div>
+    </div>
+
+    <!-- Patient Grid -->
+    <div class="border border-terminal-border flex-1 bg-black/40 rounded overflow-auto custom-scrollbar">
+        <table class="w-full text-left text-sm">
+            <thead class="bg-black/80 text-gray-400 border-b border-terminal-border sticky top-0 backdrop-blur-sm z-10">
+                <tr>
+                    <th class="p-3 font-normal">ID</th>
+                    <th class="p-3 font-normal">NAME</th>
+                    <th class="p-3 font-normal">AGE/SEX</th>
+                    <th class="p-3 font-normal">CONDITION</th>
+                    <th class="p-3 font-normal">STATUS</th>
+                    <th class="p-3 font-normal">LAST VISIT</th>
+                    <th class="p-3 font-normal w-10"></th>
+                </tr>
+            </thead>
+            <tbody id="patientTableBody" class="divide-y divide-terminal-border">
+                {% for p in patients %}
+                <tr class="hover:bg-white/5 transition-colors group patient-row">
+                    <td class="p-3 font-mono text-terminal-green">
+                        <a href="{{ url_for('main.patient_detail', patient_id=p.id) }}"
+                            class="block w-full h-full hover:underline">#PT-{{ p.id }}</a>
+                    </td>
+                    <td class="p-3 font-bold text-white patient-name">
+                        <a href="{{ url_for('main.patient_detail', patient_id=p.id) }}"
+                            class="block w-full h-full hover:underline">{{ p.name }}</a>
+                    </td>
+                    <td class="p-3 text-gray-300">{{ p.age }} / {{ p.sex }}</td>
+                    <td class="p-3 text-gray-300">{{ p.condition }}</td>
+                    <td class="p-3">
+                        <span
+                            class="px-2 py-0.5 rounded text-xs 
+                        {% if p.status == 'Critical' %}bg-red-500/20 text-red-400{% elif p.status == 'Stable' %}bg-green-500/20 text-green-400{% else %}bg-yellow-500/20 text-yellow-400{% endif %}">
+                            {{ p.status }}
+                        </span>
+                    </td>
+                    <td class="p-3 text-gray-500">{{ p.last_visit }}</td>
+                    <td class="p-3 text-right">
+                        <button onclick="deletePatient('{{ p.id }}')"
+                            class="text-gray-600 hover:text-red-500 transition opacity-0 group-hover:opacity-100"
+                            title="Delete Record">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Patient Modal -->
+<div id="addPatientModal"
+    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <div class="bg-black border border-terminal-border p-6 rounded w-96 shadow-2xl shadow-green-900/20">
+        <h2 class="text-terminal-green font-bold mb-4 text-lg">NEW PATIENT RECORD</h2>
+        <form id="addPatientForm" class="flex flex-col gap-3">
+            <div class="flex flex-col gap-1">
+                <label class="text-xs text-gray-500">FULL NAME</label>
+                <input type="text" name="name" required
+                    class="bg-gray-900 border border-terminal-border px-3 py-2 text-white focus:border-terminal-green outline-none rounded placeholder-gray-600">
+            </div>
+            <div class="flex gap-2">
+                <div class="flex-1 flex flex-col gap-1">
+                    <label class="text-xs text-gray-500">AGE</label>
+                    <input type="number" name="age" required
+                        class="w-full bg-gray-900 border border-terminal-border px-3 py-2 text-white focus:border-terminal-green outline-none rounded placeholder-gray-600">
+                </div>
+                <div class="flex-1 flex flex-col gap-1">
+                    <label class="text-xs text-gray-500">SEX</label>
+                    <select name="sex"
+                        class="w-full bg-gray-900 border border-terminal-border px-3 py-2 text-white focus:border-terminal-green outline-none rounded">
+                        <option value="M">Male</option>
+                        <option value="F">Female</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="text-xs text-gray-500">PRIMARY CONDITION</label>
+                <input type="text" name="condition" required
+                    class="bg-gray-900 border border-terminal-border px-3 py-2 text-white focus:border-terminal-green outline-none rounded placeholder-gray-600">
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="text-xs text-gray-500">STATUS</label>
+                <select name="status"
+                    class="bg-gray-900 border border-terminal-border px-3 py-2 text-white focus:border-terminal-green outline-none rounded">
+                    <option value="Stable">Stable</option>
+                    <option value="Monitoring">Monitoring</option>
+                    <option value="Critical">Critical</option>
+                </select>
+            </div>
+
+            <div class="flex gap-2 mt-4">
+                <button type="button" onclick="document.getElementById('addPatientModal').classList.add('hidden')"
+                    class="flex-1 bg-white/10 text-white py-2 rounded hover:bg-white/20 transition">CANCEL</button>
+                <button type="submit"
+                    class="flex-1 bg-terminal-green text-black font-bold py-2 rounded hover:bg-green-400 transition">CREATE</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Search Functionality
+    document.getElementById('searchInput').addEventListener('keyup', function () {
+        const filter = this.value.toLowerCase();
+        const rows = document.querySelectorAll('.patient-row');
+
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            if (text.includes(filter)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+
+    async function deletePatient(id) {
+        if (!confirm('WARNING: Delete patient record? This action cannot be undone.')) return;
+
+        try {
+            const res = await fetch(`/api/patients/${id}`, { method: 'DELETE' });
+            if (res.ok) window.location.reload();
+            else alert('Failed to delete patient');
+        } catch (e) {
+            console.error(e);
+            alert('System error');
+        }
+    }
+
+    document.getElementById('addPatientForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+
+        try {
+            const res = await fetch('/api/patients', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (res.ok) window.location.reload();
+            else alert('Failed to create patient');
+        } catch (e) {
+            console.error(e);
+            alert('System error');
+        }
+    });
+</script>
+{% endblock %}

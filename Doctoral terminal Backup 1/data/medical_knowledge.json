@@ -1,0 +1,581 @@
+{
+    "diseases": {
+        "Bacterial Meningitis": {
+            "base_rate": 0.0003,
+            "symptoms": {
+                "Headache": 0.95,
+                "Fever": 0.95,
+                "Stiff Neck": 0.90,
+                "Photophobia": 0.85,
+                "Confusion": 0.75,
+                "Altered Mental Status": 0.70,
+                "Nausea": 0.60,
+                "Vomiting": 0.55,
+                "Rash": 0.50,
+                "Seizures": 0.25,
+                "Drowsiness": 0.60
+            },
+            "is_critical": true,
+            "clinical_note": "Urgent: lumbar puncture and IV antibiotics required."
+        },
+        "Viral Meningitis": {
+            "base_rate": 0.002,
+            "symptoms": {
+                "Headache": 0.90,
+                "Fever": 0.85,
+                "Stiff Neck": 0.70,
+                "Photophobia": 0.60,
+                "Confusion": 0.30,
+                "Nausea": 0.50,
+                "Vomiting": 0.45,
+                "Fatigue": 0.70
+            },
+            "is_critical": false
+        },
+        "Migraine": {
+            "base_rate": 0.12,
+            "symptoms": {
+                "Headache": 0.99,
+                "Photophobia": 0.90,
+                "Phonophobia": 0.85,
+                "Nausea": 0.80,
+                "Vomiting": 0.45,
+                "Aura": 0.30,
+                "Unilateral Pain": 0.70,
+                "Pulsating Pain": 0.80
+            },
+            "is_critical": false,
+            "clinical_note": "Typical migraine presentation with unilateral pulsating headache and photophobia."
+        },
+        "Tension Headache": {
+            "base_rate": 0.20,
+            "symptoms": {
+                "Headache": 0.99,
+                "Bilateral Pain": 0.85,
+                "Pressing Pain": 0.90,
+                "Muscle Tension": 0.70,
+                "Mild to Moderate Pain": 0.85
+            },
+            "is_critical": false
+        },
+        "Stroke (Ischemic)": {
+            "base_rate": 0.002,
+            "symptoms": {
+                "Weakness": 0.80,
+                "Facial Drooping": 0.75,
+                "Speech Difficulty": 0.70,
+                "Confusion": 0.60,
+                "Vision Problems": 0.50,
+                "Dizziness": 0.55,
+                "Headache": 0.30,
+                "Loss of Balance": 0.60,
+                "Numbness": 0.65
+            },
+            "is_critical": true,
+            "clinical_note": "Time-critical: CT scan, consider thrombolysis within 4.5 hours."
+        },
+        "Hemorrhagic Stroke": {
+            "base_rate": 0.0008,
+            "symptoms": {
+                "Severe Headache": 0.90,
+                "Sudden Headache": 0.95,
+                "Nausea": 0.75,
+                "Vomiting": 0.70,
+                "Altered Mental Status": 0.80,
+                "Seizures": 0.35,
+                "Weakness": 0.70,
+                "Vision Problems": 0.60
+            },
+            "is_critical": true
+        },
+        "Subarachnoid Hemorrhage": {
+            "base_rate": 0.0002,
+            "symptoms": {
+                "Thunderclap Headache": 0.95,
+                "Sudden Severe Headache": 0.98,
+                "Stiff Neck": 0.75,
+                "Nausea": 0.80,
+                "Vomiting": 0.75,
+                "Loss of Consciousness": 0.50,
+                "Photophobia": 0.70,
+                "Confusion": 0.65
+            },
+            "is_critical": true,
+            "clinical_note": "CT head non-contrast. If negative with high suspicion: lumbar puncture."
+        },
+        "Epilepsy": {
+            "base_rate": 0.01,
+            "symptoms": {
+                "Seizures": 0.95,
+                "Loss of Consciousness": 0.60,
+                "Confusion": 0.70,
+                "Muscle Spasms": 0.75,
+                "Aura": 0.40,
+                "Fatigue": 0.50
+            },
+            "is_critical": false
+        },
+        "Brain Tumor": {
+            "base_rate": 0.0005,
+            "symptoms": {
+                "Headache": 0.70,
+                "Seizures": 0.40,
+                "Vision Problems": 0.50,
+                "Nausea": 0.55,
+                "Vomiting": 0.45,
+                "Cognitive Changes": 0.60,
+                "Weakness": 0.45,
+                "Balance Problems": 0.50
+            },
+            "is_critical": true
+        },
+        "Myocardial Infarction": {
+            "base_rate": 0.003,
+            "symptoms": {
+                "Chest Pain": 0.90,
+                "Pressure in Chest": 0.85,
+                "Shortness of Breath": 0.70,
+                "Nausea": 0.50,
+                "Sweating": 0.60,
+                "Left Arm Pain": 0.40,
+                "Jaw Pain": 0.30,
+                "Fatigue": 0.50,
+                "Dizziness": 0.35
+            },
+            "is_critical": true,
+            "clinical_note": "STEMI protocol: ECG, troponins, immediate cardiology consult."
+        },
+        "Unstable Angina": {
+            "base_rate": 0.002,
+            "symptoms": {
+                "Chest Pain": 0.95,
+                "Pressure in Chest": 0.90,
+                "Shortness of Breath": 0.60,
+                "Sweating": 0.45,
+                "Pain at Rest": 0.80
+            },
+            "is_critical": true
+        },
+        "Pulmonary Embolism": {
+            "base_rate": 0.001,
+            "symptoms": {
+                "Shortness of Breath": 0.90,
+                "Chest Pain": 0.65,
+                "Cough": 0.50,
+                "Rapid Heart Rate": 0.75,
+                "Coughing Blood": 0.30,
+                "Anxiety": 0.60,
+                "Sweating": 0.45,
+                "Dizziness": 0.40
+            },
+            "is_critical": true,
+            "clinical_note": "Wells score, D-dimer, CT angiography if high suspicion."
+        },
+        "Aortic Dissection": {
+            "base_rate": 0.0001,
+            "symptoms": {
+                "Sudden Severe Chest Pain": 0.95,
+                "Tearing Pain": 0.90,
+                "Back Pain": 0.70,
+                "Shortness of Breath": 0.50,
+                "Sweating": 0.60,
+                "Weakness": 0.55,
+                "Loss of Consciousness": 0.30
+            },
+            "is_critical": true
+        },
+        "Pericarditis": {
+            "base_rate": 0.001,
+            "symptoms": {
+                "Chest Pain": 0.90,
+                "Sharp Pain": 0.85,
+                "Pain Worse When Lying": 0.80,
+                "Shortness of Breath": 0.60,
+                "Fever": 0.45,
+                "Palpitations": 0.50
+            },
+            "is_critical": false
+        },
+        "Heart Failure": {
+            "base_rate": 0.02,
+            "symptoms": {
+                "Shortness of Breath": 0.90,
+                "Fatigue": 0.85,
+                "Swelling in Legs": 0.75,
+                "Rapid Heart Rate": 0.70,
+                "Cough": 0.60,
+                "Wheezing": 0.45,
+                "Weight Gain": 0.50
+            },
+            "is_critical": true
+        },
+        "Pneumonia": {
+            "base_rate": 0.015,
+            "symptoms": {
+                "Fever": 0.85,
+                "Cough": 0.90,
+                "Chest Pain": 0.60,
+                "Shortness of Breath": 0.70,
+                "Fatigue": 0.75,
+                "Chills": 0.70,
+                "Sweating": 0.60,
+                "Confusion": 0.30,
+                "Productive Cough": 0.80
+            },
+            "is_critical": false
+        },
+        "COVID-19": {
+            "base_rate": 0.05,
+            "symptoms": {
+                "Fever": 0.70,
+                "Cough": 0.75,
+                "Fatigue": 0.80,
+                "Loss of Taste": 0.45,
+                "Loss of Smell": 0.45,
+                "Shortness of Breath": 0.55,
+                "Body Aches": 0.65,
+                "Headache": 0.60,
+                "Sore Throat": 0.50,
+                "Diarrhea": 0.25
+            },
+            "is_critical": false
+        },
+        "Influenza": {
+            "base_rate": 0.08,
+            "symptoms": {
+                "Fever": 0.90,
+                "Cough": 0.85,
+                "Fatigue": 0.95,
+                "Body Aches": 0.90,
+                "Headache": 0.70,
+                "Chills": 0.85,
+                "Sore Throat": 0.60,
+                "Runny Nose": 0.50
+            },
+            "is_critical": false
+        },
+        "Asthma Attack": {
+            "base_rate": 0.08,
+            "symptoms": {
+                "Shortness of Breath": 0.95,
+                "Wheezing": 0.90,
+                "Chest Tightness": 0.85,
+                "Cough": 0.80,
+                "Rapid Breathing": 0.75,
+                "Anxiety": 0.60
+            },
+            "is_critical": true
+        },
+        "COPD Exacerbation": {
+            "base_rate": 0.03,
+            "symptoms": {
+                "Shortness of Breath": 0.95,
+                "Cough": 0.90,
+                "Wheezing": 0.80,
+                "Chest Tightness": 0.75,
+                "Fatigue": 0.85,
+                "Productive Cough": 0.85
+            },
+            "is_critical": true
+        },
+        "Tuberculosis": {
+            "base_rate": 0.001,
+            "symptoms": {
+                "Chronic Cough": 0.90,
+                "Coughing Blood": 0.50,
+                "Weight Loss": 0.75,
+                "Night Sweats": 0.80,
+                "Fever": 0.70,
+                "Fatigue": 0.85,
+                "Chest Pain": 0.55
+            },
+            "is_critical": true
+        },
+        "Appendicitis": {
+            "base_rate": 0.008,
+            "symptoms": {
+                "Abdominal Pain": 0.95,
+                "Right Lower Quadrant Pain": 0.90,
+                "Nausea": 0.75,
+                "Vomiting": 0.70,
+                "Loss of Appetite": 0.85,
+                "Fever": 0.60,
+                "Rebound Tenderness": 0.80
+            },
+            "is_critical": true,
+            "clinical_note": "Surgical evaluation required. NPO, IV fluids, imaging."
+        },
+        "Cholecystitis": {
+            "base_rate": 0.006,
+            "symptoms": {
+                "Right Upper Quadrant Pain": 0.95,
+                "Nausea": 0.80,
+                "Vomiting": 0.75,
+                "Fever": 0.65,
+                "Pain After Eating": 0.85,
+                "Jaundice": 0.30
+            },
+            "is_critical": true
+        },
+        "Pancreatitis": {
+            "base_rate": 0.003,
+            "symptoms": {
+                "Upper Abdominal Pain": 0.95,
+                "Radiating Back Pain": 0.75,
+                "Nausea": 0.90,
+                "Vomiting": 0.85,
+                "Fever": 0.60,
+                "Rapid Heart Rate": 0.70,
+                "Tender Abdomen": 0.85
+            },
+            "is_critical": true
+        },
+        "Gastroenteritis": {
+            "base_rate": 0.10,
+            "symptoms": {
+                "Diarrhea": 0.95,
+                "Nausea": 0.85,
+                "Vomiting": 0.80,
+                "Abdominal Cramps": 0.90,
+                "Fever": 0.50,
+                "Dehydration": 0.60
+            },
+            "is_critical": false
+        },
+        "Peptic Ulcer": {
+            "base_rate": 0.05,
+            "symptoms": {
+                "Abdominal Pain": 0.90,
+                "Burning Pain": 0.85,
+                "Nausea": 0.60,
+                "Bloating": 0.70,
+                "Vomiting": 0.40,
+                "Dark Stool": 0.30
+            },
+            "is_critical": false
+        },
+        "Bowel Obstruction": {
+            "base_rate": 0.002,
+            "symptoms": {
+                "Abdominal Pain": 0.95,
+                "Cramping Pain": 0.90,
+                "Vomiting": 0.85,
+                "Constipation": 0.80,
+                "Bloating": 0.90,
+                "No Bowel Movements": 0.85
+            },
+            "is_critical": true
+        },
+        "Sepsis": {
+            "base_rate": 0.002,
+            "symptoms": {
+                "Fever": 0.85,
+                "Chills": 0.75,
+                "Rapid Heart Rate": 0.90,
+                "Rapid Breathing": 0.85,
+                "Confusion": 0.70,
+                "Low Blood Pressure": 0.75,
+                "Extreme Fatigue": 0.80
+            },
+            "is_critical": true,
+            "clinical_note": "qSOFA score, blood cultures, early antibiotics (within 1 hour)."
+        },
+        "Urinary Tract Infection": {
+            "base_rate": 0.10,
+            "symptoms": {
+                "Painful Urination": 0.90,
+                "Frequent Urination": 0.85,
+                "Urgency": 0.80,
+                "Lower Abdominal Pain": 0.70,
+                "Cloudy Urine": 0.65,
+                "Blood in Urine": 0.40,
+                "Fever": 0.30
+            },
+            "is_critical": false
+        },
+        "Pyelonephritis": {
+            "base_rate": 0.015,
+            "symptoms": {
+                "Fever": 0.90,
+                "Chills": 0.80,
+                "Flank Pain": 0.85,
+                "Nausea": 0.70,
+                "Vomiting": 0.65,
+                "Painful Urination": 0.75,
+                "Frequent Urination": 0.70
+            },
+            "is_critical": true
+        },
+        "Malaria": {
+            "base_rate": 0.0005,
+            "symptoms": {
+                "Fever": 0.95,
+                "Chills": 0.90,
+                "Sweating": 0.85,
+                "Headache": 0.80,
+                "Nausea": 0.70,
+                "Vomiting": 0.65,
+                "Fatigue": 0.90,
+                "Body Aches": 0.75
+            },
+            "is_critical": true
+        },
+        "Dengue Fever": {
+            "base_rate": 0.001,
+            "symptoms": {
+                "High Fever": 0.95,
+                "Severe Headache": 0.90,
+                "Eye Pain": 0.80,
+                "Joint Pain": 0.85,
+                "Muscle Pain": 0.85,
+                "Rash": 0.50,
+                "Nausea": 0.70,
+                "Vomiting": 0.65
+            },
+            "is_critical": true
+        },
+        "Diabetic Ketoacidosis": {
+            "base_rate": 0.001,
+            "symptoms": {
+                "Excessive Thirst": 0.90,
+                "Frequent Urination": 0.95,
+                "Nausea": 0.80,
+                "Vomiting": 0.75,
+                "Abdominal Pain": 0.70,
+                "Confusion": 0.65,
+                "Fruity Breath": 0.60,
+                "Rapid Breathing": 0.85
+            },
+            "is_critical": true,
+            "clinical_note": "Check glucose, ketones, VBG. Insulin and fluid resuscitation."
+        },
+        "Hypoglycemia": {
+            "base_rate": 0.02,
+            "symptoms": {
+                "Shakiness": 0.90,
+                "Sweating": 0.85,
+                "Confusion": 0.80,
+                "Irritability": 0.75,
+                "Dizziness": 0.70,
+                "Hunger": 0.85,
+                "Rapid Heart Rate": 0.75
+            },
+            "is_critical": true
+        },
+        "Hyperthyroidism": {
+            "base_rate": 0.012,
+            "symptoms": {
+                "Weight Loss": 0.80,
+                "Rapid Heart Rate": 0.85,
+                "Anxiety": 0.75,
+                "Tremor": 0.70,
+                "Sweating": 0.80,
+                "Heat Intolerance": 0.75,
+                "Diarrhea": 0.50
+            },
+            "is_critical": false
+        },
+        "Hypothyroidism": {
+            "base_rate": 0.05,
+            "symptoms": {
+                "Fatigue": 0.90,
+                "Weight Gain": 0.70,
+                "Cold Intolerance": 0.75,
+                "Constipation": 0.60,
+                "Dry Skin": 0.70,
+                "Hair Loss": 0.50,
+                "Depression": 0.55
+            },
+            "is_critical": false
+        },
+        "Anaphylaxis": {
+            "base_rate": 0.002,
+            "symptoms": {
+                "Difficulty Breathing": 0.90,
+                "Swelling": 0.85,
+                "Hives": 0.80,
+                "Rapid Heart Rate": 0.85,
+                "Low Blood Pressure": 0.75,
+                "Dizziness": 0.70,
+                "Nausea": 0.60,
+                "Confusion": 0.50
+            },
+            "is_critical": true,
+            "clinical_note": "IM epinephrine 0.3mg immediately. Monitor for biphasic reaction."
+        },
+        "Panic Attack": {
+            "base_rate": 0.04,
+            "symptoms": {
+                "Chest Pain": 0.65,
+                "Shortness of Breath": 0.80,
+                "Palpitations": 0.90,
+                "Sweating": 0.75,
+                "Trembling": 0.85,
+                "Fear of Dying": 0.95,
+                "Dizziness": 0.70,
+                "Nausea": 0.50
+            },
+            "is_critical": false
+        },
+        "Dehydration": {
+            "base_rate": 0.15,
+            "symptoms": {
+                "Thirst": 0.95,
+                "Dry Mouth": 0.90,
+                "Fatigue": 0.80,
+                "Dizziness": 0.70,
+                "Dark Urine": 0.75,
+                "Decreased Urination": 0.80,
+                "Headache": 0.60
+            },
+            "is_critical": false
+        },
+        "Deep Vein Thrombosis": {
+            "base_rate": 0.002,
+            "symptoms": {
+                "Leg Swelling": 0.90,
+                "Leg Pain": 0.85,
+                "Warmth in Leg": 0.75,
+                "Red Skin": 0.70,
+                "Tender Calf": 0.80
+            },
+            "is_critical": true
+        },
+        "Vitamin D Deficiency": {
+            "base_rate": 0.30,
+            "symptoms": {
+                "Fatigue": 0.70,
+                "Bone Pain": 0.60,
+                "Muscle Weakness": 0.55,
+                "Depression": 0.45,
+                "Hair Loss": 0.30
+            },
+            "is_critical": false
+        },
+        "Vitamin B12 Deficiency": {
+            "base_rate": 0.06,
+            "symptoms": {
+                "Fatigue": 0.85,
+                "Weakness": 0.75,
+                "Numbness": 0.65,
+                "Tingling": 0.60,
+                "Memory Problems": 0.50,
+                "Depression": 0.40
+            },
+            "is_critical": false
+        },
+        "Iron Deficiency Anemia": {
+            "base_rate": 0.05,
+            "symptoms": {
+                "Fatigue": 0.90,
+                "Weakness": 0.80,
+                "Pale Skin": 0.70,
+                "Shortness of Breath": 0.60,
+                "Dizziness": 0.55,
+                "Cold Hands": 0.50,
+                "Brittle Nails": 0.45
+            },
+            "is_critical": false
+        }
+    }
+}

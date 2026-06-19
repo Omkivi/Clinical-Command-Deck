@@ -1,0 +1,836 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="h-full flex flex-col gap-4">
+    <div class="flex justify-between items-center">
+        <h1 class="text-xl font-bold text-white">LAB REPORTS & DIAGNOSTICS</h1>
+        <div class="flex gap-2">
+            <select id="patientSelect"
+                class="bg-black border border-terminal-border px-3 py-1 text-sm text-white focus:border-terminal-green outline-none">
+                <option value="">Select Patient (Optional)</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="flex-1 grid grid-cols-2 gap-4 overflow-hidden">
+
+        <!-- LEFT COLUMN: Upload & Analysis -->
+        <div class="flex flex-col gap-4 overflow-auto custom-scrollbar">
+
+            <!-- IMAGING INTELLIGENCE ENGINE (Always On) -->
+            <div class="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border-2 border-blue-500/50 p-4 rounded">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-white font-bold flex items-center gap-2">
+                        <i data-lucide="brain-circuit" class="w-5 h-5 text-blue-400"></i>
+                        🧠 Imaging Intelligence Engine
+                    </h2>
+                    <div class="flex items-center gap-2 text-xs">
+                        <span class="bg-blue-500/20 text-blue-400 px-2 py-1 rounded">5-Layer Analysis</span>
+                        <span class="bg-purple-500/20 text-purple-400 px-2 py-1 rounded">AI Council</span>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-400 mb-3">Advanced clinical reasoning with rare disease detection,
+                    mechanism-level analysis, and multi-model deliberation.</p>
+
+                <div class="flex flex-col gap-3">
+                    <!-- Clinical Context -->
+                    <input type="text" id="clinicalContext"
+                        placeholder="Clinical indication (optional): e.g., 'Chest pain', 'Fever'..."
+                        class="bg-gray-900 border border-terminal-border px-3 py-2 text-white focus:border-blue-500 outline-none rounded text-sm">
+
+                    <!-- File Upload with Drag & Drop -->
+                    <div id="dropZone" class="cursor-pointer">
+                        <label for="unifiedUpload" class="cursor-pointer">
+                            <div id="dropZoneVisual"
+                                class="bg-gray-900 border-2 border-dashed border-blue-500 hover:bg-blue-500/5 px-4 py-6 rounded text-center transition">
+                                <i data-lucide="upload" class="w-8 h-8 mx-auto mb-2 text-blue-400"></i>
+                                <div id="unifiedUploadLabel" class="text-sm text-white font-bold">Drop file here or
+                                    click to upload</div>
+                                <div class="text-xs text-gray-500 mt-1">ECG • X-ray • CT • MRI • Labs • Pathology</div>
+                                <div class="text-xs text-gray-600 mt-1">Supports: JPG, PNG, PDF, DICOM</div>
+                            </div>
+                            <input type="file" id="unifiedUpload" accept=".jpg,.jpeg,.png,.pdf,.dcm,.dicom"
+                                class="hidden" onchange="handleUnifiedUpload(this)">
+                        </label>
+                    </div>
+
+                    <!-- Preview -->
+                    <div id="unifiedPreview" class="hidden"></div>
+
+                    <!-- Analyze Button -->
+                    <button onclick="analyzeUnifiedUpload()" id="unifiedAnalyzeBtn"
+                        class="bg-blue-500 text-white font-bold py-3 rounded hover:bg-blue-400 transition text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled>
+                        <i data-lucide="brain-circuit" class="w-4 h-4"></i>
+                        🧠 IIE ANALYZE
+                    </button>
+                </div>
+
+                <!-- Analysis Result -->
+                <div id="unifiedAnalysisResult" class="mt-3"></div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Patient History -->
+        <div class="flex flex-col gap-4 overflow-auto custom-scrollbar">
+
+            <!-- Patient Lab History -->
+            <div class="bg-black/40 border border-terminal-border p-4 rounded flex-1 flex flex-col">
+                <h2 class="text-white font-bold mb-3 flex items-center gap-2">
+                    <i data-lucide="history" class="w-4 h-4"></i> Patient Lab History
+                </h2>
+                <div id="patientLabHistory" class="flex-1 overflow-auto">
+                    <div class="text-gray-600 text-sm italic p-2">Select a patient to view lab history</div>
+                </div>
+            </div>
+
+            <!-- Patient Radiology History -->
+            <div class="bg-black/40 border border-terminal-border p-4 rounded flex-1 flex flex-col">
+                <h2 class="text-white font-bold mb-3 flex items-center gap-2">
+                    <i data-lucide="file-scan" class="w-4 h-4"></i> Patient Radiology History
+                </h2>
+                <div id="patientRadiologyHistory" class="flex-1 overflow-auto">
+                    <div class="text-gray-600 text-sm italic p-2">Select a patient to view radiology history</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentPatientId = null;
+    // IIE is always enabled - no toggle needed
+
+
+    // Load patients on page load
+    async function loadPatients() {
+        try {
+            const res = await fetch('/api/patients');
+            const patients = await res.json();
+            const select = document.getElementById('patientSelect');
+            patients.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p.id;
+                option.textContent = `#PT-${p.id} - ${p.name}`;
+                select.appendChild(option);
+            });
+        } catch (e) {
+            console.error('Failed to load patients', e);
+        }
+    }
+
+    document.getElementById('patientSelect').addEventListener('change', async (e) => {
+        currentPatientId = e.target.value ? parseInt(e.target.value) : null;
+        if (currentPatientId) {
+            await loadPatientHistory(currentPatientId);
+        }
+    });
+
+    async function loadPatientHistory(patientId) {
+        // Load lab reports
+        try {
+            const labRes = await fetch(`/api/patients/${patientId}/lab-reports`);
+            const labs = await labRes.json();
+            const labContainer = document.getElementById('patientLabHistory');
+
+            if (labs.length === 0) {
+                labContainer.innerHTML = '<div class="text-gray-600 text-sm italic p-2">No lab reports on file</div>';
+            } else {
+                labContainer.innerHTML = labs.map(lab => `
+                    <div class="mb-3 bg-black/20 border border-gray-700 p-3 rounded">
+                        <div class="text-xs text-gray-500 mb-1">${lab.date}</div>
+                        <div class="text-sm text-white font-bold mb-2">${lab.overall_summary}</div>
+                        <div class="text-xs text-gray-400">${lab.interpretation}</div>
+                        <div class="mt-2 text-xs">
+                            ${lab.tests.slice(0, 3).map(t => `<span class="text-gray-300">${t.test_name}: ${t.value} ${t.unit || ''}</span>`).join(' | ')}
+                            ${lab.tests.length > 3 ? `<span class="text-gray-500">... +${lab.tests.length - 3} more</span>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            }
+        } catch (e) {
+            console.error('Failed to load lab history', e);
+        }
+
+        // Load radiology studies
+        try {
+            const radRes = await fetch(`/api/patients/${patientId}/radiology-studies`);
+            const studies = await radRes.json();
+            const radContainer = document.getElementById('patientRadiologyHistory');
+
+            if (studies.length === 0) {
+                radContainer.innerHTML = '<div class="text-gray-600 text-sm italic p-2">No radiology studies on file</div>';
+            } else {
+                radContainer.innerHTML = studies.map(study => `
+                    <div class="mb-3 bg-black/20 border border-gray-700 p-3 rounded">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="text-sm text-terminal-green font-bold">${study.study_type}</div>
+                            <div class="text-xs text-gray-500">${study.study_date}</div>
+                        </div>
+                        <div class="text-xs text-gray-400 mb-2">Indication: ${study.indication}</div>
+                        <div class="text-xs text-white">${study.impression}</div>
+                        ${study.critical_findings && study.critical_findings.length > 0 ?
+                        `<div class="mt-2 bg-red-500/20 border border-red-500/50 p-2 rounded text-xs text-red-400">
+                                🚨 ${study.critical_findings.join(', ')}
+                            </div>` : ''}
+                    </div>
+                `).join('');
+            }
+        } catch (e) {
+            console.error('Failed to load radiology history', e);
+        }
+    }
+
+    async function getTestRecommendations() {
+        const symptomsText = document.getElementById('symptomForTest').value;
+        if (!symptomsText.trim()) return;
+
+        const symptoms = symptomsText.split(',').map(s => s.trim()).filter(s => s);
+        const resultDiv = document.getElementById('testRecommendations');
+        resultDiv.innerHTML = '<div class="text-terminal-green animate-pulse text-sm">Analyzing...</div>';
+
+        try {
+            const res = await fetch('/api/recommend-tests', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ symptoms, patient_id: currentPatientId })
+            });
+            const data = await res.json();
+
+            let html = '<div class="text-xs space-y-2">';
+            html += `<div class="text-gray-400 italic mb-2">${data.rationale}</div>`;
+
+            if (data.essential_tests && data.essential_tests.length > 0) {
+                html += '<div class="mb- 2"><div class="text-red-400 font-bold mb-1">⚠️ ESSENTIAL TESTS:</div>';
+                data.essential_tests.forEach(test => {
+                    html += `<div class="ml-2 text-white">• ${test}</div>`;
+                });
+                html += '</div>';
+            }
+
+            if (data.imaging_studies && data.imaging_studies.length > 0) {
+                html += '<div class="mb-2"><div class="text-orange-400 font-bold mb-1">IMAGING REQUIRED:</div>';
+                data.imaging_studies.forEach(study => {
+                    html += `<div class="ml-2 text-white">• ${study}</div>`;
+                });
+                html += '</div>';
+            }
+
+            if (data.recommended_tests && data.recommended_tests.length > 0) {
+                html += '<div class="mb-2"><div class="text-gray-300 font-bold mb-1">RECOMMENDED:</div>';
+                data.recommended_tests.forEach(test => {
+                    html += `<div class="ml-2 text-gray-400">• ${test}</div>`;
+                });
+                html += '</div>';
+            }
+
+            html += '</div>';
+            resultDiv.innerHTML = html;
+        } catch (e) {
+            console.error(e);
+            resultDiv.innerHTML = '<div class="text-red-500 text-sm">Error getting recommendations</div>';
+        }
+    }
+
+    // Initialize
+    loadPatients();
+    lucide.createIcons();
+
+    // ==== DRAG AND DROP SUPPORT ====
+    const dropZone = document.getElementById('dropZone');
+    const dropZoneVisual = document.getElementById('dropZoneVisual');
+
+    // Prevent default drag behaviors on the whole document
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        document.body.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    // Highlight drop zone when item is dragged over
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+            dropZoneVisual.classList.add('bg-terminal-green/20', 'border-solid', 'border-terminal-green');
+            dropZoneVisual.classList.remove('border-dashed');
+        }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+            dropZoneVisual.classList.remove('bg-terminal-green/20', 'border-solid');
+            dropZoneVisual.classList.add('border-dashed');
+        }, false);
+    });
+
+    // Handle dropped files
+    dropZone.addEventListener('drop', (e) => {
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            processUploadedFile(files[0]);
+        }
+    }, false);
+
+    // ==== UNIFIED MEDICAL UPLOAD ====
+    let unifiedFile = null;
+
+    function handleUnifiedUpload(input) {
+        if (input.files && input.files.length > 0) {
+            processUploadedFile(input.files[0]);
+        }
+    }
+
+    function processUploadedFile(file) {
+        unifiedFile = file;
+
+        // Update label
+        document.getElementById('unifiedUploadLabel').textContent = `✅ ${unifiedFile.name} (${(unifiedFile.size / 1024 / 1024).toFixed(2)}MB)`;
+
+        // Enable analyze button
+        document.getElementById('unifiedAnalyzeBtn').disabled = false;
+
+        // Show preview
+        const previewDiv = document.getElementById('unifiedPreview');
+        previewDiv.classList.remove('hidden');
+
+        if (unifiedFile.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                previewDiv.innerHTML = `
+                    <div class="bg-black p-2 rounded border border-terminal-border">
+                        <img src="${e.target.result}" class="max-h-40 mx-auto rounded">
+                        <div class="text-xs text-gray-500 mt-2 text-center">${unifiedFile.name}</div>
+                    </div>
+                `;
+            };
+            reader.readAsDataURL(unifiedFile);
+        } else {
+            previewDiv.innerHTML = `
+                <div class="bg-gray-900 p-3 rounded border border-terminal-border flex items-center gap-3">
+                    <i data-lucide="file-text" class="w-6 h-6 text-terminal-green"></i>
+                    <div class="flex-1">
+                        <div class="text-white text-sm font-bold">${unifiedFile.name}</div>
+                        <div class="text-gray-500 text-xs">Ready for AI analysis</div>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+    }
+
+    async function analyzeUnifiedUpload() {
+        if (!unifiedFile) {
+            alert('Please upload a file first');
+            return;
+        }
+
+        const resultDiv = document.getElementById('unifiedAnalysisResult');
+        const context = document.getElementById('clinicalContext').value.trim();
+
+        // IIE loading message with 5-layer analysis
+        resultDiv.innerHTML = `
+            <div class="bg-blue-500/10 border border-blue-500 p-3 rounded text-sm">
+                <div class="text-blue-400 font-bold mb-2 animate-pulse flex items-center gap-2">
+                    <i data-lucide="loader" class="w-4 h-4"></i>
+                    🧠 IIE analyzing (5-layer analysis)...
+                </div>
+                <div class="text-gray-400 text-xs">
+                    • Layer 1: Perception (extracting findings)...<br>
+                    • Layer 2: Knowledge mapping...<br>
+                    • Layer 3: Clinical reasoning...<br>
+                    • Layer 4: Longitudinal analysis...<br>
+                    • Layer 5: Decision intelligence...
+                </div>
+            </div>
+        `;
+        lucide.createIcons();
+
+        try {
+            // Upload file
+            const formData = new FormData();
+            formData.append('file', unifiedFile);
+            formData.append('clinical_context', context);
+            if (currentPatientId) {
+                formData.append('patient_id', currentPatientId);
+            }
+
+            // IIE preferences - all features enabled
+            const preferences = {
+                reasoning_mode: 'standard',
+                specialty_lens: null,
+                include_rare_diseases: true,
+                show_mechanism_reasoning: true,
+                show_council_disagreements: true,
+                show_uncertainty_ranges: true,
+                assume_worst_case: true
+            };
+            formData.append('preferences', JSON.stringify(preferences));
+
+            // Always use IIE endpoint
+            const res = await fetch('/api/analyze-imaging-intelligence', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.message || errData.error || 'Analysis failed');
+            }
+
+            const data = await res.json();
+
+            let html = '';
+
+            // Always use IIE display
+            if (data.differential_diagnoses) {
+                html = displayIIEResults(data);
+            } else {
+                // Fallback for non-IIE response
+                html = '<div class="bg-black/60 border-2 border-blue-500 p-4 rounded text-xs">';
+                html += '<div class="text-blue-400 font-bold mb-2">Analysis Result</div>';
+                html += '<div class="text-white">' + JSON.stringify(data, null, 2) + '</div>';
+                html += '</div>';
+            }
+
+            if (currentPatientId) {
+                html += '<div class="text-terminal-green text-xs mt-2">\u2713 Saved to patient record</div>';
+                await loadPatientHistory(currentPatientId);
+            }
+
+            resultDiv.innerHTML = html;
+            lucide.createIcons();
+
+            // Reset
+            unifiedFile = null;
+            document.getElementById('unifiedUpload').value = '';
+            document.getElementById('unifiedUploadLabel').textContent = 'Drop file here or click to upload';
+            document.getElementById('unifiedPreview').innerHTML = '';
+            document.getElementById('unifiedPreview').classList.add('hidden');
+            document.getElementById('unifiedAnalyzeBtn').disabled = true;
+
+        } catch (e) {
+            console.error(e);
+            resultDiv.innerHTML = `
+                <div class="bg-red-500/10 border border-red-500 p-3 rounded text-sm">
+                    <div class="text-red-400 font-bold mb-1">\u274c Analysis Error</div>
+                    <div class="text-gray-400 text-xs">${e.message || 'Please try again or contact support'}</div>
+                </div>
+            `;
+        }
+    }
+
+    function displayECGResults(data) {
+        let html = '';
+
+        // Critical findings alert
+        if (data.urgency_level === 'CRITICAL') {
+            html += `
+                <div class="bg-red-500/20 border-2 border-red-500 p-3 rounded">
+                    <div class="text-red-400 font-bold text-sm mb-2">\ud83d\udea8 CRITICAL ECG FINDINGS</div>
+                    ${data.critical_findings && data.critical_findings.length > 0
+                    ? data.critical_findings.map(f => `<div class="text-red-300">\u2022 ${f}</div>`).join('')
+                    : ''}
+                    ${data.recommendations && data.recommendations.length > 0
+                    ? '<div class="mt-2 text-yellow-300 font-bold">IMMEDIATE ACTIONS:</div>' +
+                    data.recommendations.map(r => `<div class="text-yellow-200">\u2713 ${r}</div>`).join('')
+                    : ''}
+                </div>
+            `;
+        }
+
+        html += `
+            <div>
+                <div class="text-white font-bold mb-1">Interpretation:</div>
+          <div class="text-gray-300">${data.clinical_impression || 'See details below'}</div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <div class="text-gray-500 text-[10px]">HEART RATE</div>
+                    <div class="text-white">${data.heart_rate || 'N/A'} bpm</div>
+                </div>
+                <div>
+                    <div class="text-gray-500 text-[10px]">RHYTHM</div>
+                    <div class="text-white">${data.rhythm || 'N/A'}</div>
+                </div>
+            </div>
+
+            ${data.abnormalities && data.abnormalities.length > 0 ? `
+                <div>
+                    <div class="text-orange-400 font-bold text-[10px] mb-1">ABNORMALITIES:</div>
+                    ${data.abnormalities.map(a => `<div class="text-orange-300">\u2022 ${a}</div>`).join('')}
+                </div>
+            ` : ''}
+        `;
+
+        return html;
+    }
+
+    function displayImagingResults(data) {
+        let html = '';
+
+        // Critical findings alert
+        if (data.critical_findings && data.critical_findings.length > 0) {
+            html += `
+                <div class="bg-red-500/20 border-2 border-red-500 p-3 rounded mb-3">
+                    <div class="text-red-400 font-bold mb-2">CRITICAL FINDINGS</div>
+                    ${data.critical_findings.map(f => `
+                        <div class="text-red-300 mb-1">
+                            <span class="font-bold">${typeof f === 'object' ? f.finding : f}</span>
+                            ${typeof f === 'object' && f.urgency ? `<span class="text-xs text-red-400 ml-2">[${f.urgency}]</span>` : ''}
+                            ${typeof f === 'object' && f.recommended_action ? `<div class="text-yellow-300 text-[10px] ml-4">→ ${f.recommended_action}</div>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // Header info
+        html += `
+            <div class="grid grid-cols-3 gap-3 mb-3">
+                <div class="bg-white/5 p-2 rounded">
+                    <div class="text-gray-500 text-[10px]">MODALITY</div>
+                    <div class="text-terminal-green font-bold">${data.modality || data.study_type || 'Imaging'}</div>
+                </div>
+                <div class="bg-white/5 p-2 rounded">
+                    <div class="text-gray-500 text-[10px]">QUALITY</div>
+                    <div class="text-white">${data.quality_assessment || 'Good'}</div>
+                </div>
+                <div class="bg-white/5 p-2 rounded">
+                    <div class="text-gray-500 text-[10px]">COVERAGE</div>
+                    <div class="text-white text-[11px]">${data.anatomical_coverage || 'Standard'}</div>
+                </div>
+            </div>
+        `;
+
+        // Indication & Technique
+        if (data.indication || data.technique) {
+            html += `
+                <div class="mb-3 p-2 bg-white/5 rounded">
+                    ${data.indication ? `<div class="mb-1"><span class="text-gray-500">Indication:</span> <span class="text-white">${data.indication}</span></div>` : ''}
+                    ${data.technique ? `<div><span class="text-gray-500">Technique:</span> <span class="text-gray-300 text-[11px]">${data.technique}</span></div>` : ''}
+                </div>
+            `;
+        }
+
+        // Detailed Findings
+        if (data.detailed_findings && data.detailed_findings.length > 0) {
+            html += `
+                <div class="mb-3">
+                    <div class="text-terminal-green font-bold text-sm mb-2 flex items-center gap-2">
+                        <i data-lucide="search" class="w-4 h-4"></i>
+                        DETAILED FINDINGS
+                    </div>
+                    <div class="space-y-2">
+                        ${data.detailed_findings.map((f, i) => `
+                            <div class="bg-white/5 border border-terminal-border p-2 rounded">
+                                <div class="flex justify-between items-start mb-1">
+                                    <div class="text-white font-bold text-[11px]">${i + 1}. ${f.anatomical_region || 'Finding'}</div>
+                                    <div class="flex gap-1">
+                                        ${f.severity ? `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${f.severity === 'Severe' ? 'bg-red-500/30 text-red-400' :
+                    f.severity === 'Moderate' ? 'bg-orange-500/30 text-orange-400' :
+                        f.severity === 'Mild' ? 'bg-yellow-500/30 text-yellow-400' :
+                            'bg-green-500/30 text-green-400'
+                    }">${f.severity}</span>` : ''}
+                                        ${f.clinical_significance ? `<span class="px-1.5 py-0.5 rounded text-[9px] ${f.clinical_significance === 'High' ? 'bg-red-500/20 text-red-300' :
+                    f.clinical_significance === 'Medium' ? 'bg-yellow-500/20 text-yellow-300' :
+                        'bg-gray-500/20 text-gray-400'
+                    }">${f.clinical_significance}</span>` : ''}
+                                    </div>
+                                </div>
+                                <div class="text-gray-300 text-[11px] mb-1">${f.finding}</div>
+                                <div class="grid grid-cols-2 gap-2 text-[10px]">
+                                    ${f.location ? `<div><span class="text-gray-500">Location:</span> <span class="text-cyan-400">${f.location}</span></div>` : ''}
+                                    ${f.size_measurement ? `<div><span class="text-gray-500">Size:</span> <span class="text-white">${f.size_measurement}</span></div>` : ''}
+                                    ${f.characteristics ? `<div><span class="text-gray-500">Characteristics:</span> <span class="text-gray-300">${f.characteristics}</span></div>` : ''}
+                                    ${f.change_from_prior ? `<div><span class="text-gray-500">Change:</span> <span class="${f.change_from_prior === 'Worsened' ? 'text-red-400' :
+                    f.change_from_prior === 'Improved' ? 'text-green-400' :
+                        f.change_from_prior === 'New' ? 'text-orange-400' : 'text-gray-400'
+                    }">${f.change_from_prior}</span></div>` : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Impression
+        if (data.impression) {
+            html += `
+                <div class="mb-3 p-3 bg-terminal-green/10 border border-terminal-green/30 rounded">
+                    <div class="text-terminal-green font-bold text-[11px] mb-1">IMPRESSION</div>
+                    <div class="text-white">${data.impression}</div>
+                </div>
+            `;
+        }
+
+        // Differential Diagnosis
+        if (data.differential_diagnosis && data.differential_diagnosis.length > 0) {
+            html += `
+                <div class="mb-3">
+                    <div class="text-cyan-400 font-bold text-[11px] mb-2">DIFFERENTIAL DIAGNOSIS</div>
+                    <div class="space-y-1">
+                        ${data.differential_diagnosis.map(d => `
+                            <div class="bg-cyan-500/10 border border-cyan-500/20 p-2 rounded">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-white font-bold">${typeof d === 'object' ? d.diagnosis : d}</span>
+                                    ${typeof d === 'object' && d.likelihood ? `<span class="text-[10px] px-2 py-0.5 rounded ${d.likelihood === 'High' ? 'bg-terminal-green/30 text-terminal-green' :
+                    d.likelihood === 'Moderate' ? 'bg-yellow-500/30 text-yellow-400' :
+                        'bg-gray-500/30 text-gray-400'
+                    }">${d.likelihood}</span>` : ''}
+                                </div>
+                                ${typeof d === 'object' && d.supporting_features ? `<div class="text-[10px] text-gray-400 mt-1">+ ${d.supporting_features}</div>` : ''}
+                                ${typeof d === 'object' && d.against_features ? `<div class="text-[10px] text-gray-500 mt-0.5">− ${d.against_features}</div>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Patient Specific Correlation
+        if (data.patient_specific_correlation && data.patient_context_applied) {
+            html += `
+                <div class="mb-3 p-2 bg-purple-500/10 border border-purple-500/30 rounded">
+                    <div class="text-purple-400 font-bold text-[10px] mb-1">PATIENT CORRELATION</div>
+                    <div class="text-gray-300 text-[11px]">${data.patient_specific_correlation}</div>
+                </div>
+            `;
+        }
+
+        // Recommendations
+        if (data.recommendations && data.recommendations.length > 0) {
+            html += `
+                <div class="mb-3">
+                    <div class="text-blue-400 font-bold text-[11px] mb-2">RECOMMENDATIONS</div>
+                    <div class="space-y-1">
+                        ${data.recommendations.map(r => `
+                            <div class="flex items-start gap-2 text-[11px]">
+                                ${typeof r === 'object' && r.priority ? `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold flex-shrink-0 ${r.priority === 'Immediate' ? 'bg-red-500/30 text-red-400' :
+                    r.priority === 'Routine' ? 'bg-blue-500/30 text-blue-400' :
+                        'bg-gray-500/30 text-gray-400'
+                    }">${r.priority}</span>` : '<span class="text-blue-400">→</span>'}
+                                <div>
+                                    <span class="text-white">${typeof r === 'object' ? r.recommendation : r}</span>
+                                    ${typeof r === 'object' && r.rationale ? `<div class="text-gray-500 text-[10px]">${r.rationale}</div>` : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Follow-up & Limitations
+        if (data.follow_up_imaging || data.limitations) {
+            html += `
+                <div class="grid grid-cols-2 gap-2 text-[10px]">
+                    ${data.follow_up_imaging ? `
+                        <div class="bg-white/5 p-2 rounded">
+                            <div class="text-gray-500">Follow-up Imaging</div>
+                            <div class="text-white">${data.follow_up_imaging}</div>
+                        </div>
+                    ` : ''}
+                    ${data.limitations ? `
+                        <div class="bg-white/5 p-2 rounded">
+                            <div class="text-gray-500">Limitations</div>
+                            <div class="text-gray-400">${data.limitations}</div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        // Clinical Summary
+        if (data.clinical_summary) {
+            html += `
+                <div class="mt-3 p-2 bg-white/5 border-t border-terminal-border">
+                    <div class="text-gray-500 text-[10px]">CLINICAL SUMMARY</div>
+                    <div class="text-white text-[11px]">${data.clinical_summary}</div>
+                </div>
+            `;
+        }
+
+        return html;
+    }
+
+    function displayLabResults(data) {
+        return `
+            <div>
+                <div class="text-white font-bold mb-1">${data.overall_summary || 'Lab Analysis'}</div>
+                <div class="text-gray-400 text-xs">${data.interpretation || ''}</div>
+            </div>
+        `;
+    }
+
+    function displayPathologyResults(data) {
+        return `
+            <div>
+                <div class="text-gray-500 text-[10px]">DIAGNOSIS</div>
+                <div class="text-white font-bold">${data.diagnosis || 'See full report'}</div>
+            </div>
+            <div>
+                <div class="text-gray-500 text-[10px]">SIGNIFICANCE</div>
+                <div class="text-white">${data.significance || 'N/A'}</div>
+            </div>
+        `;
+    }
+
+    // Display IIE (Imaging Intelligence Engine) Results
+    function displayIIEResults(data) {
+        let html = '<div class="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border-2 border-blue-500 p-4 rounded space-y-4 text-xs">';
+
+        // Header
+        html += '<div class="border-b border-blue-500/30 pb-3 mb-3">';
+        html += '<div class="flex justify-between items-center">';
+        html += '<div class="text-blue-400 font-bold text-sm flex items-center gap-2">🧠 IMAGING INTELLIGENCE ENGINE</div>';
+        html += '<div class="text-xs text-gray-500">Session: ' + (data.session_id || 'N/A') + '</div>';
+        html += '</div></div>';
+
+        // Differential Diagnoses
+        if (data.differential_diagnoses && data.differential_diagnoses.length > 0) {
+            html += '<div class="mb-4">';
+            html += '<div class="text-terminal-green font-bold mb-2 flex items-center gap-2">📊 DIFFERENTIAL DIAGNOSES';
+            if (data.requires_more_data) {
+                html += ' <span class="text-yellow-400 text-[10px] bg-yellow-400/20 px-2 py-0.5 rounded">NEED MORE DATA</span>';
+            }
+            html += '</div>';
+            html += '<div class="space-y-2">';
+
+            data.differential_diagnoses.forEach(function (dx, idx) {
+                var borderClass = idx === 0 ? 'border-terminal-green' : 'border-gray-700';
+                html += '<div class="bg-black/40 border ' + borderClass + ' p-3 rounded">';
+                html += '<div class="flex justify-between items-start mb-1">';
+                html += '<div><span class="text-white font-bold">' + (idx + 1) + '. ' + dx.condition + '</span>';
+                html += '<span class="text-gray-500 text-[10px] ml-2">(' + dx.icd10 + ')</span></div>';
+                html += '<div class="text-right">';
+                html += '<div class="text-terminal-green font-bold">' + (dx.probability * 100).toFixed(0) + '%</div>';
+                if (dx.confidence_interval) {
+                    html += '<div class="text-gray-600 text-[10px]">[' + (dx.confidence_interval[0] * 100).toFixed(0) + '-' + (dx.confidence_interval[1] * 100).toFixed(0) + '%]</div>';
+                }
+                html += '</div></div>';
+
+                // Supporting evidence
+                if (dx.supporting_evidence && dx.supporting_evidence.length > 0) {
+                    html += '<div class="mt-2"><div class="text-green-400 text-[10px] mb-1">✓ Supporting:</div>';
+                    dx.supporting_evidence.slice(0, 3).forEach(function (e) {
+                        html += '<div class="text-gray-400 text-[10px] ml-2">• ' + e + '</div>';
+                    });
+                    html += '</div>';
+                }
+
+                // Contradicting evidence
+                if (dx.contradicting_evidence && dx.contradicting_evidence.length > 0) {
+                    html += '<div class="mt-1"><div class="text-red-400 text-[10px] mb-1">✗ Against:</div>';
+                    dx.contradicting_evidence.slice(0, 2).forEach(function (e) {
+                        html += '<div class="text-gray-500 text-[10px] ml-2">• ' + e + '</div>';
+                    });
+                    html += '</div>';
+                }
+                html += '</div>';
+            });
+
+            html += '</div></div>';
+        }
+
+        // Rare Disease Alerts
+        if (data.rare_disease_alerts && data.rare_disease_alerts.length > 0) {
+            html += '<div class="mb-4 bg-yellow-500/10 border border-yellow-500 p-3 rounded">';
+            html += '<div class="text-yellow-400 font-bold mb-2">⚠️ UNCOMMON BUT CONSIDER</div>';
+
+            data.rare_disease_alerts.forEach(function (alert) {
+                html += '<div class="bg-black/40 border border-yellow-500/30 p-2 rounded mb-2">';
+                html += '<div class="text-white font-bold">' + alert.condition + '</div>';
+                html += '<div class="text-gray-400 text-[10px]">Prevalence: ' + alert.prevalence + '</div>';
+                html += '<div class="text-yellow-300 text-[10px] mt-1">Pattern match: ' + (alert.pattern_match_score * 100).toFixed(0) + '% - ' + alert.why_flagged + '</div>';
+                html += '<div class="text-orange-400 text-[10px] mt-1">→ Refer to: ' + alert.specialist_referral + ' (' + alert.urgency + ')</div>';
+                html += '</div>';
+            });
+
+            html += '</div>';
+        }
+
+        // Mechanism Reasoning
+        if (data.mechanism_analysis && data.mechanism_analysis.mechanisms) {
+            html += '<div class="mb-4">';
+            html += '<div class="text-purple-400 font-bold mb-2">🔬 PATHOPHYSIOLOGY REASONING</div>';
+            html += '<div class="bg-black/40 border border-purple-500/30 p-3 rounded">';
+            html += '<div class="text-white text-[11px] mb-2">Finding: ' + data.mechanism_analysis.finding + '</div>';
+
+            data.mechanism_analysis.mechanisms.forEach(function (m) {
+                html += '<div class="mb-2">';
+                html += '<div class="text-purple-300 font-bold text-[10px]">' + m.mechanism + ' (' + (m.probability * 100).toFixed(0) + '%)</div>';
+                if (m.subtypes) {
+                    Object.entries(m.subtypes).forEach(function (entry) {
+                        html += '<div class="text-gray-400 text-[10px] ml-3">• ' + entry[0].replace(/_/g, ' ') + ': ' + (entry[1] * 100).toFixed(0) + '%</div>';
+                    });
+                }
+                html += '</div>';
+            });
+
+            html += '</div></div>';
+        }
+
+        // Recommended Actions
+        if (data.recommended_actions && data.recommended_actions.length > 0) {
+            html += '<div class="mb-4">';
+            html += '<div class="text-orange-400 font-bold mb-2">🎯 RECOMMENDED ACTIONS</div>';
+            html += '<div class="space-y-1">';
+
+            data.recommended_actions.forEach(function (action, idx) {
+                var urgencyClass = action.urgency === 'URGENT' ? 'bg-red-500/20 text-red-400' :
+                    action.urgency === 'SOON' ? 'bg-orange-500/20 text-orange-400' :
+                        'bg-gray-500/20 text-gray-400';
+                html += '<div class="flex gap-2 items-start bg-black/40 border border-gray-700 p-2 rounded">';
+                html += '<div class="text-terminal-green font-bold text-[10px]">' + (idx + 1) + '.</div>';
+                html += '<div class="flex-1">';
+                html += '<div class="text-white text-[11px]">' + action.action + '</div>';
+                html += '<div class="text-gray-500 text-[10px]">' + action.rationale + '</div>';
+                html += '</div>';
+                html += '<div class="text-xs px-2 py-0.5 rounded ' + urgencyClass + '">' + action.urgency + '</div>';
+                html += '</div>';
+            });
+
+            html += '</div></div>';
+        }
+
+        // Safety Indicators
+        html += '<div class="border-t border-blue-500/30 pt-3 flex justify-between items-center text-[10px]">';
+        html += '<div class="flex gap-4">';
+
+        // Drift indicator
+        var driftClass = data.drift_detected ? 'text-yellow-400' : 'text-green-400';
+        var driftIcon = data.drift_detected ? '⚠️' : '✓';
+        var driftText = data.drift_detected ? 'DETECTED' : 'Normal';
+        html += '<div class="flex items-center gap-1"><span class="' + driftClass + '">' + driftIcon + '</span>';
+        html += '<span class="text-gray-400">Drift: ' + driftText + '</span></div>';
+
+        // OOD indicator
+        var oodProb = data.out_of_distribution_probability || 0;
+        var oodClass = oodProb > 0.7 ? 'text-red-400' : 'text-green-400';
+        var oodIcon = oodProb > 0.7 ? '⚠️' : '✓';
+        html += '<div class="flex items-center gap-1"><span class="' + oodClass + '">' + oodIcon + '</span>';
+        html += '<span class="text-gray-400">OOD: ' + (oodProb * 100).toFixed(0) + '%</span></div>';
+
+        // Calibration
+        var calibScore = data.calibration_score || 0;
+        html += '<div class="flex items-center gap-1"><span class="text-gray-400">Calibration:</span>';
+        html += '<span class="text-terminal-green">' + (calibScore * 100).toFixed(0) + '%</span></div>';
+
+        html += '</div>';
+
+        // Entropy
+        var entropy = data.diagnostic_entropy ? data.diagnostic_entropy.toFixed(2) : 'N/A';
+        html += '<div class="text-gray-600">Entropy: ' + entropy + '</div>';
+        html += '</div>';
+
+        html += '</div>';
+        return html;
+    }
+
+</script>
+{% endblock %}

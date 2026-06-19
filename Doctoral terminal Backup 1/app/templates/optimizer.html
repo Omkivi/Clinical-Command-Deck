@@ -1,0 +1,734 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="h-full flex flex-col gap-4">
+    <h1 class="text-xl font-bold text-white uppercase tracking-wider">Therapeutic Optimizer</h1>
+    <p class="text-gray-400 text-sm">Intelligent AI-Powered Engine — Analyzes condition complexity to recommend the
+        <strong>optimal number</strong> of drugs (0 to unlimited) with patient-specific considerations.
+    </p>
+
+    <div class="grid grid-cols-12 gap-4 flex-1 overflow-hidden">
+        <!-- Left Panel: Controls -->
+        <div
+            class="col-span-3 bg-white/5 border border-terminal-border p-4 rounded flex flex-col gap-4 overflow-y-auto">
+            <h2 class="text-terminal-green font-bold text-sm tracking-wider border-b border-terminal-border pb-2">
+                PARAMETERS</h2>
+
+            <form id="optForm" class="flex flex-col gap-4">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">CONDITION</label>
+                    <input type="text" name="condition" list="conditions" placeholder="e.g. Anxiety and Back Pain"
+                        required
+                        class="w-full bg-black border border-terminal-border px-3 py-2 text-white focus:border-terminal-green outline-none rounded placeholder-gray-600">
+                    <datalist id="conditions">
+                        <option value="Type 2 Diabetes + Hypertension">
+                        <option value="Heart Failure">
+                        <option value="Chronic Kidney Disease + Anemia">
+                        <option value="Severe Anxiety and Insomnia">
+                        <option value="Asthma and Allergies">
+                        <option value="GERD and Migraine">
+                        <option value="Mild Headache">
+                        <option value="Complex Multimorbidity">
+                    </datalist>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">PATIENT (OPTIONAL)</label>
+                    <select name="patient_id" id="patientSelect"
+                        class="w-full bg-black border border-terminal-border px-3 py-2 text-white focus:border-terminal-green outline-none rounded">
+                        <option value="">None - General Population</option>
+                    </select>
+                    <div id="patientInfo" class="mt-2 text-xs text-gray-600 hidden">
+                        <div class="bg-white/5 border border-terminal-border rounded p-2 space-y-1">
+                            <div><span class="text-terminal-green">Age:</span> <span id="patientAge"></span></div>
+                            <div><span class="text-terminal-green">Weight:</span> <span id="patientWeight"></span> kg |
+                                BMI: <span id="patientBMI"></span></div>
+                            <div><span class="text-terminal-green">Allergies:</span> <span id="patientAllergies"></span>
+                            </div>
+                            <div><span class="text-terminal-green">Current Meds:</span> <span id="patientMeds"></span>
+                            </div>
+                            <div id="patientPgxAlerts"
+                                class="hidden mt-2 p-2 bg-purple-900/20 border border-purple-500/30 rounded">
+                                <div class="text-purple-400 font-bold mb-1">🧬 Pharmacogenomic Alerts:</div>
+                                <div id="patientPgxList" class="text-purple-300"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-gray-500 mb-2">OPTIMIZATION PRIORITY</label>
+                    <div class="flex flex-col gap-2">
+                        <label class="flex items-center gap-2 cursor-pointer hover:bg-white/5 p-2 rounded transition">
+                            <input type="radio" name="priority" value="balanced" checked class="accent-terminal-green">
+                            <span class="text-sm text-gray-300">Balanced Profile</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer hover:bg-white/5 p-2 rounded transition">
+                            <input type="radio" name="priority" value="efficacy" class="accent-terminal-green">
+                            <span class="text-sm text-gray-300">Max Efficacy</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer hover:bg-white/5 p-2 rounded transition">
+                            <input type="radio" name="priority" value="safety" class="accent-terminal-green">
+                            <span class="text-sm text-gray-300">Max Safety</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer hover:bg-white/5 p-2 rounded transition">
+                            <input type="radio" name="priority" value="affordability" class="accent-terminal-green">
+                            <span class="text-sm text-gray-300">Max Affordability</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="pt-2 border-t border-terminal-border">
+                    <label class="block text-xs text-gray-500 mb-2">INTEGRATIVE MEDICINE</label>
+                    <label class="flex items-center gap-3 cursor-pointer hover:bg-white/5 p-2 rounded transition">
+                        <div class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="integrative_mode" value="true" class="sr-only peer">
+                            <div
+                                class="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-terminal-green">
+                            </div>
+                        </div>
+                        <span class="text-sm text-gray-300">Include Ayurvedic/Herbal</span>
+                    </label>
+                    <p class="text-[10px] text-gray-500 mt-1 ml-2">Adds evidence-based herbal adjuvants with strict
+                        interaction checks.</p>
+                </div>
+
+                <button type="submit"
+                    class="mt-4 bg-terminal-green text-black font-bold py-3 rounded hover:bg-green-400 transition">
+                    OPTIMIZE COMBINATION
+                </button>
+            </form>
+
+            <div class="mt-4 pt-4 border-t border-terminal-border">
+                <div class="text-xs text-gray-600">
+                    <div class="mb-3">
+                        <span class="text-terminal-green">AI Council:</span>
+                        <div class="ml-2 mt-1 space-y-0.5">
+                            <div class="flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 bg-blue-400 rounded-full"></span>
+                                <span>Gemini 2.0 Flash</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 bg-green-400 rounded-full"></span>
+                                <span>GPT-4o</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 bg-orange-400 rounded-full"></span>
+                                <span>Mistral Large</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
+                                <span>Llama 3.1 70B</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <span class="text-terminal-green">Algorithm:</span>
+                        <span class="text-cyan-400 font-mono">QUANTUM-Rx™</span>
+                        <div class="text-[10px] text-gray-500 ml-2 mt-0.5">Adaptive Multi-Target Polypharmacy
+                            Optimization with Bayesian Consensus</div>
+                    </div>
+                    <div><span class="text-terminal-green">Features:</span> Evidence-based, PGx-aware, Council-validated
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Results -->
+        <div class="col-span-9 bg-black/40 border border-terminal-border p-4 rounded flex flex-col overflow-hidden">
+            <div class="flex justify-between items-center border-b border-terminal-border pb-3 mb-4">
+                <h2 class="text-terminal-green font-bold text-sm tracking-wider">RANKED COMBINATIONS</h2>
+                <div class="text-xs text-gray-500" id="results-count">Top Results</div>
+            </div>
+
+            <div class="flex-1 overflow-auto">
+                <div id="optResults">
+                    <!-- Initial State -->
+                    <div class="flex flex-col items-center justify-center h-full text-gray-500">
+
+                        <div class="text-lg font-bold mb-2">Select Parameters Above</div>
+                        <div class="text-sm">Click "OPTIMIZE COMBINATION" to see ranked drug combinations</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Load patients on page load
+    (async function () {
+        try {
+            const response = await fetch('/api/patients');
+            const patients = await response.json();
+            const select = document.getElementById('patientSelect');
+
+            patients.forEach(patient => {
+                const option = document.createElement('option');
+                option.value = patient.id;
+                option.textContent = `${patient.name} (Age ${patient.age})`;
+                option.dataset.patient = JSON.stringify(patient);
+                select.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Failed to load patients:', error);
+        }
+    })();
+
+    // Show patient info when selected
+    document.getElementById('patientSelect').addEventListener('change', function (e) {
+        const selectedOption = e.target.options[e.target.selectedIndex];
+        const patientInfo = document.getElementById('patientInfo');
+
+        if (selectedOption.dataset.patient) {
+            const patient = JSON.parse(selectedOption.dataset.patient);
+            document.getElementById('patientAge').textContent = patient.age || 'Unknown';
+            document.getElementById('patientWeight').textContent = patient.weight || 70;
+            document.getElementById('patientBMI').textContent = patient.bmi || 'N/A';
+            document.getElementById('patientAllergies').textContent = patient.allergies && patient.allergies.length > 0
+                ? patient.allergies.join(', ')
+                : 'None';
+            document.getElementById('patientMeds').textContent = patient.current_medications && patient.current_medications.length > 0
+                ? patient.current_medications.map(m => m.name).join(', ')
+                : 'None';
+
+            // Pharmacogenomics alerts
+            const pgxAlerts = document.getElementById('patientPgxAlerts');
+            const pgxList = document.getElementById('patientPgxList');
+            const pgx = patient.pharmacogenomics;
+
+            if (pgx) {
+                let alerts = [];
+                if (pgx.CYP2D6 === 'Ultra-Rapid') alerts.push('CYP2D6 Ultra-Rapid: AVOID Codeine');
+                if (pgx.CYP2D6 === 'Poor') alerts.push('CYP2D6 Poor: Reduce opioids');
+                if (pgx.CYP2C19 === 'Poor') alerts.push('CYP2C19 Poor: Clopidogrel ineffective');
+                if (pgx.CYP2C9 === 'Poor') alerts.push('CYP2C9 Poor: Warfarin bleeding risk');
+                if (pgx.HLA_B5701) alerts.push('HLA-B*57:01+: AVOID Abacavir');
+                if (pgx.TPMT === 'Deficient') alerts.push('TPMT Deficient: AVOID Azathioprine');
+
+                if (alerts.length > 0) {
+                    pgxAlerts.classList.remove('hidden');
+                    pgxList.innerHTML = alerts.map(a => `<div>⚠️ ${a}</div>`).join('');
+                } else {
+                    pgxAlerts.classList.add('hidden');
+                }
+            } else {
+                pgxAlerts.classList.add('hidden');
+            }
+
+            patientInfo.classList.remove('hidden');
+        } else {
+            patientInfo.classList.add('hidden');
+        }
+    });
+
+    document.getElementById('optForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+
+        const resultsDiv = document.getElementById('optResults');
+        const countDiv = document.getElementById('results-count');
+
+        resultsDiv.innerHTML = `
+            <div class="flex flex-col items-center justify-center h-full">
+                <div class="text-terminal-green text-lg font-bold animate-pulse">Computing optimal combinations...</div>
+                <div class="text-gray-500 text-sm mt-2">Analyzing condition complexity, efficacy, safety, and affordability</div>
+            </div>
+        `;
+
+        try {
+            const requestBody = {
+                condition: formData.get('condition'),
+                priority: formData.get('priority'),
+                integrative_mode: formData.get('include_adjuvants') === 'on'
+            };
+
+            const patientId = formData.get('patient_id');
+            if (patientId) {
+                requestBody.patient_id = parseInt(patientId);
+            }
+
+            const response = await fetch('/api/optimize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
+            });
+
+            const data = await response.json();
+            // Handle both new format {combinations: [...], council_deliberation: {...}} and legacy array format
+            const combinations = Array.isArray(data) ? data : (data.combinations || []);
+            countDiv.textContent = `Showing Top ${combinations.length} Results`;
+
+            if (combinations.length === 0) {
+                resultsDiv.innerHTML = '<div class="text-center text-gray-500 p-8">No combinations found for this condition.</div>';
+                return;
+            }
+
+            resultsDiv.innerHTML = combinations.map((item, index) => {
+                const rankClass = index < 3 ? 'bg-terminal-green/10 border-l-4 border-terminal-green' : '';
+                const rankBadge = index === 0 ? '[TOP]' : index === 1 ? '[2nd]' : index === 2 ? '[3rd]' : '';
+                const drugCount = item.drugs.length;
+                const evidenceColor = item.evidence_level === 'High' ? 'text-green-400' :
+                    item.evidence_level === 'Medium' ? 'text-yellow-400' : 'text-orange-400';
+
+                return `
+                <div class="mb-4 bg-white/5 border border-terminal-border rounded p-4 hover:bg-white/10 transition-colors ${rankClass}">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="text-2xl font-bold text-gray-600">#${index + 1} ${rankBadge}</div>
+                            <div>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-sm text-gray-500">${drugCount}-DRUG COMBINATION</span>
+                                    <span class="text-xs ${evidenceColor} font-bold">● ${item.evidence_level || 'Medium'} Evidence</span>
+                                    ${item.patient_specific_notes && item.patient_specific_notes !== 'General population' ?
+                        '<span class="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded">Patient-Specific</span>' : ''}
+                                </div>
+                                <div class="flex flex-wrap gap-2">
+                                    ${item.drugs.map((drug, i) => `
+                                        <div class="bg-black/50 border border-terminal-border rounded px-3 py-1.5">
+                                            <div class="text-white font-bold text-sm">${drug.name}</div>
+                                            <div class="text-xs text-gray-500">${drug.class} · ${drug.category}</div>
+                                            ${drug.dosage ? `<div class="text-xs text-gray-600">${drug.dosage}</div>` : ''}
+                                            
+                                            ${drug.weight_based_dosing ? `
+                                            <div class="mt-1 pt-1 border-t border-gray-700">
+                                                <div class="flex items-center gap-1 text-xs text-cyan-400" title="${drug.weight_based_dosing.note}">
+                                                    <span>⚖️</span>
+                                                    <span class="font-bold">
+                                                        ${drug.weight_based_dosing.calculated_dose_mg ? drug.weight_based_dosing.calculated_dose_mg + 'mg' : drug.weight_based_dosing.calculated_dose_units + ' units'}
+                                                    </span>
+                                                    <span class="text-[10px] text-gray-500 opacity-70">Rec.</span>
+                                                </div>
+                                                ${drug.weight_based_dosing.renal_warning ? `<div class="text-[10px] text-yellow-500 mt-0.5">⚠️ ${drug.weight_based_dosing.renal_warning}</div>` : ''}
+                                            </div>
+                                            ` : ''}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-gray-500">Overall Score</div>
+                            <div class="text-2xl font-bold text-terminal-green">${item.overall_score}%</div>
+                            ${item.cost_per_efficacy_point ?
+                        `<div class="text-xs text-gray-500 mt-1">$${item.cost_per_efficacy_point}/point</div>` : ''}
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-4 mt-3 pt-3 border-t border-terminal-border">
+                        <div>
+                            <div class="text-xs text-gray-500 mb-1">EFFICACY</div>
+                            <div class="flex items-center gap-2">
+                                <div class="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-green-500" style="width: ${item.efficacy_score}%"></div>
+                                </div>
+                                <span class="text-sm font-mono text-white">${item.efficacy_score}%</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-gray-500 mb-1">SAFETY</div>
+                            <div class="flex items-center gap-2">
+                                <div class="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
+                                    <div class="h-full ${item.safety_score > 70 ? 'bg-blue-500' : 'bg-yellow-500'}" style="width: ${item.safety_score}%"></div>
+                                </div>
+                                <span class="text-sm font-mono text-white">${item.safety_score}%</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-gray-500 mb-1">COST/MONTH</div>
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden mr-2">
+                                    <div class="h-full bg-terminal-green" style="width: ${item.affordability_score}%"></div>
+                                </div>
+                                <span class="text-sm font-mono text-terminal-green font-bold">$${item.total_cost}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    ${item.escalation_path && item.escalation_path.length > 0 ? `
+                    <div class="mt-3 pt-3 border-t border-terminal-border">
+                        <div class="text-xs text-gray-500 mb-2">STEP-WISE ESCALATION PATH</div>
+                        <div class="flex flex-col gap-1">
+                            ${item.escalation_path.map(step => `
+                                <div class="text-xs bg-black/30 border border-terminal-border rounded px-2 py-1.5">
+                                    <span class="text-terminal-green font-bold">Step ${step.step}:</span> ${step.action}
+                                    <div class="text-gray-600 italic">${step.rationale}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    ${item.drug_interactions && item.drug_interactions.length > 0 ? `
+                    <div class="mt-3 pt-3 border-t border-terminal-border">
+                        <div class="text-xs text-gray-500 mb-2">DRUG INTERACTIONS</div>
+                        <div class="flex flex-wrap gap-1">
+                            ${item.drug_interactions.map(interaction => `
+                                <span class="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded">${interaction}</span>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    ${item.contraindications && item.contraindications.length > 0 ? `
+                    <div class="mt-3 pt-3 border-t border-terminal-border">
+                        <div class="text-xs text-gray-500 mb-2">CONTRAINDICATIONS</div>
+                        <div class="flex flex-wrap gap-1">
+                            ${item.contraindications.map(contra => `
+                                <span class="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded">${contra}</span>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    ${item.side_effects && item.side_effects.length > 0 ? `
+                    <div class="mt-3 pt-3 border-t border-terminal-border">
+                        <div class="text-xs text-gray-500 mb-2">POTENTIAL SIDE EFFECTS</div>
+                        <div class="flex flex-wrap gap-1">
+                            ${item.side_effects.slice(0, 6).map(effect => `
+                                <span class="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded">${effect}</span>
+                            `).join('')}
+                            ${item.side_effects.length > 6 ? `<span class="text-xs text-gray-500">+${item.side_effects.length - 6} more</span>` : ''}
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    <!-- Cross-Module Integration Buttons -->
+                    <div class="mt-3 pt-3 border-t border-terminal-border flex flex-wrap gap-2">
+                        <button onclick="showEvidenceModal(${index})" 
+                            class="px-3 py-1.5 bg-terminal-green/20 text-terminal-green text-xs font-bold rounded hover:bg-terminal-green/30 transition flex items-center gap-1">
+                            <i data-lucide="book-open" class="w-3 h-3"></i> Get Evidence
+                        </button>
+                        <button onclick="showPgxModal(${index})" 
+                            class="px-3 py-1.5 bg-purple-500/20 text-purple-400 text-xs font-bold rounded hover:bg-purple-500/30 transition flex items-center gap-1">
+                            <i data-lucide="dna" class="w-3 h-3"></i> PGx Check
+                        </button>
+                    </div>
+                </div>
+            `;
+            }).join('');
+
+            // Store combinations globally for modal access
+            window.optimizerResults = combinations;
+            window.optimizerCondition = formData.get('condition');
+
+        } catch (error) {
+            console.error(error);
+            resultsDiv.innerHTML = '<div class="text-center text-red-500 p-8">Optimization failed. Please try again.</div>';
+        }
+
+        // Refresh icons for the new buttons
+        lucide.createIcons();
+    });
+
+    // ============ EVIDENCE MODAL ============
+    function showEvidenceModal(comboIndex) {
+        const combo = window.optimizerResults[comboIndex];
+        const condition = window.optimizerCondition;
+        const reasoning = combo.clinical_reasoning || {};
+        const drugs = combo.drugs || [];
+
+        // Build landmark trials HTML
+        let trialsHtml = '';
+        if (reasoning.landmark_trials && reasoning.landmark_trials.length > 0) {
+            trialsHtml = reasoning.landmark_trials.map(trial => `
+                <div class="bg-black/50 border border-blue-500/30 rounded p-3 mb-2">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-blue-400 font-bold text-sm">${trial.name || 'Clinical Trial'}</span>
+                        <span class="text-xs text-gray-500">${trial.year || ''}</span>
+                    </div>
+                    <div class="text-gray-300 text-xs mb-1">${trial.finding || 'Key finding not available'}</div>
+                    <div class="text-green-400 text-xs">${trial.impact || ''}</div>
+                </div>
+            `).join('');
+        } else {
+            trialsHtml = '<div class="text-gray-500 text-sm">Landmark trial data will be available after optimization refresh.</div>';
+        }
+
+        const modalHtml = `
+            <div id="evidenceModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onclick="closeModal(event)">
+                <div class="bg-gray-900 border border-terminal-green/50 rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden shadow-2xl shadow-terminal-green/20" onclick="event.stopPropagation()">
+                    <!-- Header -->
+                    <div class="bg-gradient-to-r from-terminal-green/20 to-blue-500/20 border-b border-terminal-border p-4 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 bg-terminal-green/20 rounded-lg">
+                                <i data-lucide="book-open" class="w-6 h-6 text-terminal-green"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-lg font-bold text-white">Clinical Evidence & Reasoning</h2>
+                                <p class="text-xs text-gray-400">${drugs.map(d => d.name).join(' + ')} for ${condition}</p>
+                            </div>
+                        </div>
+                        <button onclick="closeModal()" class="p-2 hover:bg-white/10 rounded-lg transition">
+                            <i data-lucide="x" class="w-5 h-5 text-gray-400"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Content -->
+                    <div class="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+                        <!-- Why This Combination -->
+                        <div class="mb-6">
+                            <div class="flex items-center gap-2 mb-3">
+                                <i data-lucide="lightbulb" class="w-5 h-5 text-yellow-400"></i>
+                                <h3 class="text-terminal-green font-bold text-sm uppercase tracking-wider">Why This Combination?</h3>
+                            </div>
+                            <div class="bg-white/5 border border-terminal-border rounded-lg p-4">
+                                <p class="text-gray-300 leading-relaxed">${reasoning.why_this_combination || 'This combination was selected based on clinical guidelines and evidence-based practice.'}</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Mechanism of Action -->
+                        <div class="mb-6">
+                            <div class="flex items-center gap-2 mb-3">
+                                <i data-lucide="cog" class="w-5 h-5 text-blue-400"></i>
+                                <h3 class="text-blue-400 font-bold text-sm uppercase tracking-wider">Mechanism of Action</h3>
+                            </div>
+                            <div class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                                <p class="text-gray-300 leading-relaxed">${reasoning.mechanism_of_action || 'Detailed mechanism information available after optimization.'}</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Synergy Explanation -->
+                        <div class="mb-6">
+                            <div class="flex items-center gap-2 mb-3">
+                                <i data-lucide="git-merge" class="w-5 h-5 text-purple-400"></i>
+                                <h3 class="text-purple-400 font-bold text-sm uppercase tracking-wider">Drug Synergy</h3>
+                            </div>
+                            <div class="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
+                                <p class="text-gray-300 leading-relaxed">${reasoning.synergy_explanation || 'These drugs complement each other through different mechanisms.'}</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Clinical Numbers (NNT, ARR, etc.) -->
+                        <div class="mb-6 grid grid-cols-3 gap-4">
+                            <div class="bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/30 rounded-lg p-4 text-center">
+                                <div class="text-xs text-gray-500 mb-1">NNT</div>
+                                <div class="text-2xl font-bold text-green-400">${reasoning.numbers_needed_to_treat || '--'}</div>
+                                <div class="text-xs text-gray-500">to prevent 1 event</div>
+                            </div>
+                            <div class="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/30 rounded-lg p-4 text-center">
+                                <div class="text-xs text-gray-500 mb-1">ARR</div>
+                                <div class="text-2xl font-bold text-blue-400">${reasoning.absolute_risk_reduction || '--'}</div>
+                                <div class="text-xs text-gray-500">absolute risk reduction</div>
+                            </div>
+                            <div class="bg-gradient-to-br from-yellow-500/10 to-yellow-600/5 border border-yellow-500/30 rounded-lg p-4 text-center">
+                                <div class="text-xs text-gray-500 mb-1">Response Rate</div>
+                                <div class="text-2xl font-bold text-yellow-400">${reasoning.expected_response_rate || '--'}</div>
+                                <div class="text-xs text-gray-500">of patients respond</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Guideline Support -->
+                        <div class="mb-6">
+                            <div class="flex items-center gap-2 mb-3">
+                                <i data-lucide="file-check" class="w-5 h-5 text-cyan-400"></i>
+                                <h3 class="text-cyan-400 font-bold text-sm uppercase tracking-wider">Guideline Support</h3>
+                            </div>
+                            <div class="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-4">
+                                <p class="text-gray-300">${reasoning.guideline_support || 'Based on established clinical guidelines.'}</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Landmark Trials -->
+                        <div class="mb-6">
+                            <div class="flex items-center gap-2 mb-3">
+                                <i data-lucide="flask-conical" class="w-5 h-5 text-orange-400"></i>
+                                <h3 class="text-orange-400 font-bold text-sm uppercase tracking-wider">Landmark Trials</h3>
+                            </div>
+                            <div class="space-y-2">
+                                ${trialsHtml}
+                            </div>
+                        </div>
+                        
+                        <!-- Time to Effect & Monitoring -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-white/5 border border-terminal-border rounded-lg p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <i data-lucide="clock" class="w-4 h-4 text-terminal-green"></i>
+                                    <span class="text-xs text-gray-500">TIME TO EFFECT</span>
+                                </div>
+                                <p class="text-white font-bold">${reasoning.time_to_effect || '2-4 weeks typically'}</p>
+                            </div>
+                            <div class="bg-white/5 border border-terminal-border rounded-lg p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <i data-lucide="activity" class="w-4 h-4 text-terminal-green"></i>
+                                    <span class="text-xs text-gray-500">MONITORING</span>
+                                </div>
+                                <p class="text-white font-bold">${reasoning.monitoring_rationale || 'Standard monitoring recommended'}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        lucide.createIcons();
+    }
+
+    // ============ PGx MODAL ============
+    function showPgxModal(comboIndex) {
+        const combo = window.optimizerResults[comboIndex];
+        const pgx = combo.pharmacogenomics || {};
+        const drugs = combo.drugs || [];
+
+        // Build gene-drug pairs HTML
+        let geneDrugHtml = '';
+        if (pgx.gene_drug_pairs && pgx.gene_drug_pairs.length > 0) {
+            geneDrugHtml = pgx.gene_drug_pairs.map(pair => `
+                <div class="bg-black/50 border border-purple-500/30 rounded p-3 mb-2">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="px-2 py-0.5 bg-purple-500/30 text-purple-300 text-xs font-bold rounded">${pair.gene || 'Gene'}</span>
+                        <span class="text-gray-400">→</span>
+                        <span class="text-white font-bold">${pair.drug || 'Drug'}</span>
+                    </div>
+                    <div class="text-gray-300 text-sm mb-1">${pair.effect || 'Effect details'}</div>
+                    <div class="text-cyan-400 text-xs flex items-center gap-1">
+                        <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                        ${pair.action || 'Action needed'}
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            geneDrugHtml = '<div class="text-gray-500 text-sm">Gene-drug interaction data will be available after optimization refresh.</div>';
+        }
+
+        // Build metabolizer impact
+        const metabolizer = pgx.metabolizer_impact || {};
+
+        // Build alternatives
+        let alternativesHtml = '';
+        if (pgx.alternative_if_pgx_issue && pgx.alternative_if_pgx_issue.length > 0) {
+            alternativesHtml = pgx.alternative_if_pgx_issue.map(alt =>
+                `<span class="px-3 py-1 bg-green-500/20 text-green-400 text-xs rounded-full">${alt}</span>`
+            ).join('');
+        }
+
+        const modalHtml = `
+            <div id="pgxModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onclick="closeModal(event)">
+                <div class="bg-gray-900 border border-purple-500/50 rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden shadow-2xl shadow-purple-500/20" onclick="event.stopPropagation()">
+                    <!-- Header -->
+                    <div class="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-b border-terminal-border p-4 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 bg-purple-500/20 rounded-lg">
+                                <i data-lucide="dna" class="w-6 h-6 text-purple-400"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-lg font-bold text-white">Pharmacogenomics Analysis</h2>
+                                <p class="text-xs text-gray-400">${drugs.map(d => d.name).join(' + ')}</p>
+                            </div>
+                        </div>
+                        <button onclick="closeModal()" class="p-2 hover:bg-white/10 rounded-lg transition">
+                            <i data-lucide="x" class="w-5 h-5 text-gray-400"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Content -->
+                    <div class="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+                        <!-- Relevant Genes -->
+                        <div class="mb-6">
+                            <div class="flex items-center gap-2 mb-3">
+                                <i data-lucide="dna" class="w-5 h-5 text-purple-400"></i>
+                                <h3 class="text-purple-400 font-bold text-sm uppercase tracking-wider">Relevant Genes</h3>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                ${(pgx.relevant_genes || ['CYP2D6', 'CYP2C19', 'CYP3A4']).map(gene =>
+            `<span class="px-4 py-2 bg-purple-500/20 text-purple-300 font-bold rounded-lg border border-purple-500/30">${gene}</span>`
+        ).join('')}
+                            </div>
+                        </div>
+                        
+                        <!-- Metabolizer Impact -->
+                        <div class="mb-6">
+                            <div class="flex items-center gap-2 mb-3">
+                                <i data-lucide="activity" class="w-5 h-5 text-yellow-400"></i>
+                                <h3 class="text-yellow-400 font-bold text-sm uppercase tracking-wider">Metabolizer Status Impact</h3>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <i data-lucide="arrow-down" class="w-4 h-4 text-red-400"></i>
+                                        <span class="text-red-400 font-bold text-sm">Poor Metabolizer</span>
+                                    </div>
+                                    <p class="text-gray-300 text-sm">${metabolizer.poor_metabolizer || 'Drug accumulation risk; may need dose reduction'}</p>
+                                </div>
+                                <div class="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <i data-lucide="arrow-up" class="w-4 h-4 text-orange-400"></i>
+                                        <span class="text-orange-400 font-bold text-sm">Ultra-Rapid Metabolizer</span>
+                                    </div>
+                                    <p class="text-gray-300 text-sm">${metabolizer.ultra_rapid_metabolizer || 'Rapid drug clearance; may need dose increase or alternative'}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Gene-Drug Interactions -->
+                        <div class="mb-6">
+                            <div class="flex items-center gap-2 mb-3">
+                                <i data-lucide="git-pull-request" class="w-5 h-5 text-cyan-400"></i>
+                                <h3 class="text-cyan-400 font-bold text-sm uppercase tracking-wider">Gene-Drug Interactions</h3>
+                            </div>
+                            <div class="space-y-2">
+                                ${geneDrugHtml}
+                            </div>
+                        </div>
+                        
+                        <!-- Testing Recommendation -->
+                        <div class="mb-6">
+                            <div class="flex items-center gap-2 mb-3">
+                                <i data-lucide="test-tube" class="w-5 h-5 text-blue-400"></i>
+                                <h3 class="text-blue-400 font-bold text-sm uppercase tracking-wider">Testing Recommendation</h3>
+                            </div>
+                            <div class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-300">Pharmacogenomic testing recommended for this combination</span>
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold ${pgx.testing_recommended !== false ? 'bg-yellow-500/20 text-yellow-400' : 'bg-gray-500/20 text-gray-400'}">
+                                        ${pgx.testing_recommended !== false ? '⚠️ RECOMMENDED' : 'OPTIONAL'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Alternatives if PGx Issue -->
+                        ${alternativesHtml ? `
+                        <div class="mb-6">
+                            <div class="flex items-center gap-2 mb-3">
+                                <i data-lucide="shuffle" class="w-5 h-5 text-green-400"></i>
+                                <h3 class="text-green-400 font-bold text-sm uppercase tracking-wider">Alternatives if PGx Contraindication</h3>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                ${alternativesHtml}
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        <!-- CPIC/PharmGKB Notice -->
+                        <div class="bg-gray-800/50 border border-terminal-border rounded-lg p-4 text-center">
+                            <p class="text-gray-500 text-xs">
+                                Based on CPIC guidelines and PharmGKB annotations. 
+                                For definitive dosing, consult patient-specific PGx test results.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        lucide.createIcons();
+    }
+
+    // Close Modal
+    function closeModal(event) {
+        const evidenceModal = document.getElementById('evidenceModal');
+        const pgxModal = document.getElementById('pgxModal');
+        if (evidenceModal) evidenceModal.remove();
+        if (pgxModal) pgxModal.remove();
+    }
+
+    // Close on Escape key
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeModal();
+    });
+</script>
+{% endblock %}

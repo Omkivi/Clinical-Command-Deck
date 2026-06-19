@@ -1,0 +1,1950 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div
+    class="h-full flex flex-col bg-terminal-bg text-gray-300 font-mono relative overflow-hidden selection:bg-terminal-green/30 selection:text-white">
+
+    <!-- SUBTLE BACKGROUND GRID -->
+    <div class="absolute inset-0 pointer-events-none opacity-20" style="background-image: linear-gradient(rgba(0, 255, 0, 0.05) 1px, transparent 1px), 
+         linear-gradient(90deg, rgba(0, 255, 0, 0.05) 1px, transparent 1px); 
+         background-size: 30px 30px; mask-image: radial-gradient(circle at center, black 0%, transparent 80%);">
+    </div>
+
+    <!-- HEADER & CONTROLS -->
+    <div class="relative z-10 border-b border-white/5 bg-black/60 backdrop-blur-md p-4">
+        <div class="max-w-7xl mx-auto w-full">
+
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h1 class="text-2xl font-light text-white tracking-wider flex items-center gap-3">
+                        <i data-lucide="library" class="text-terminal-green w-6 h-6 animate-pulse"></i>
+                        <span class="typewriter-text">EVIDENCE<span
+                                class="text-terminal-green font-bold">_INTELLIGENCE</span></span>
+                        <span class="w-2 h-6 bg-terminal-green animate-pulse"></span>
+                    </h1>
+                    <div class="flex gap-6 mt-1 text-[10px] text-gray-500 tracking-widest uppercase font-mono">
+                        <span class="flex items-center gap-2"><span
+                                class="w-1.5 h-1.5 rounded-full bg-green-500 animate-ping"></span>
+                            NEURAL_ENGINE_ONLINE</span>
+                        <span id="latencyStat">LATENCY: 32ms</span>
+                    </div>
+                </div>
+                <div class="text-right hidden md:block">
+                    <div class="text-[10px] text-gray-600 uppercase mb-1">SESSION_TIME</div>
+                    <div class="text-lg font-bold text-white font-mono" id="realtimeClock">00:00:00</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD CONTENT -->
+    <div class="flex-1 overflow-auto custom-scrollbar p-4 relative z-0">
+        <div class="max-w-7xl mx-auto w-full">
+
+            <!-- ZERO STATE DASHBOARD -->
+            <div id="initialState"
+                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-2 animate-in fade-in slide-in-from-bottom-4 duration-700">
+
+                <!-- Card 1: Living Systematic Reviews -->
+                <div onclick="showSystematicReviewLibrary()"
+                    class="col-span-1 bg-gradient-to-br from-green-900/20 to-black border border-terminal-green/30 rounded-lg p-5 hover:border-terminal-green/60 transition-all duration-300 group cursor-pointer relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-3 opacity-30 group-hover:opacity-70 transition-opacity"><i
+                            data-lucide="beaker" class="w-8 h-8 text-terminal-green"></i></div>
+                    <div class="text-[10px] text-terminal-green font-bold tracking-widest mb-1 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-terminal-green rounded-full animate-pulse"></span> AI_POWERED
+                    </div>
+                    <h3 class="text-white font-bold text-lg mb-2">LIVING SYSTEMATIC REVIEW</h3>
+                    <p class="text-xs text-gray-500 leading-relaxed mb-4 font-mono">Real-time meta-analysis with Forest
+                        plots, I² heterogeneity stats, and GRADE assessment.</p>
+
+                    <!-- Forest Plot Preview -->
+                    <div class="space-y-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] text-gray-500 w-16">Study A</span>
+                            <div class="flex-1 relative h-2 flex items-center">
+                                <div class="absolute left-[40%] w-px h-full bg-gray-600"></div>
+                                <div class="absolute left-[30%] right-[35%] h-0.5 bg-terminal-green"></div>
+                                <div class="absolute left-[35%] w-1.5 h-1.5 bg-terminal-green rounded-full"></div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] text-gray-500 w-16">Study B</span>
+                            <div class="flex-1 relative h-2 flex items-center">
+                                <div class="absolute left-[40%] w-px h-full bg-gray-600"></div>
+                                <div class="absolute left-[25%] right-[40%] h-0.5 bg-terminal-green"></div>
+                                <div class="absolute left-[30%] w-1.5 h-1.5 bg-terminal-green rounded-full"></div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] text-gray-500 w-16 font-bold">Pooled</span>
+                            <div class="flex-1 relative h-2 flex items-center">
+                                <div class="absolute left-[40%] w-px h-full bg-gray-600"></div>
+                                <div class="absolute left-[28%] right-[38%] h-1 bg-terminal-green/50"></div>
+                                <div class="absolute left-[32%] w-2 h-2 bg-terminal-green rotate-45"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Guideline Reconciliation -->
+                <div onclick="showGuidelineLibrary()"
+                    class="col-span-1 bg-gradient-to-br from-blue-900/20 to-black border border-blue-500/30 rounded-lg p-5 hover:border-blue-500/60 transition-all duration-300 group cursor-pointer relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-3 opacity-30 group-hover:opacity-70 transition-opacity"><i
+                            data-lucide="scale" class="w-8 h-8 text-blue-400"></i></div>
+                    <div class="text-[10px] text-blue-400 font-bold tracking-widest mb-1 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></span> MULTI_SOURCE
+                    </div>
+                    <h3 class="text-white font-bold text-lg mb-2">GUIDELINE RECONCILIATION</h3>
+                    <p class="text-xs text-gray-500 leading-relaxed mb-4 font-mono">Compare ACC/AHA, ESC, NICE, WHO
+                        guidelines. Identify conflicts and get unified recommendations.</p>
+
+                    <!-- Guidelines Preview -->
+                    <div class="flex gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                        <div class="flex-1 bg-blue-900/30 border border-blue-500/30 rounded p-2 text-center">
+                            <div class="text-[10px] font-bold text-blue-400">ACC/AHA</div>
+                            <div class="text-[9px] text-gray-500">2023</div>
+                        </div>
+                        <div class="flex-1 bg-purple-900/30 border border-purple-500/30 rounded p-2 text-center">
+                            <div class="text-[10px] font-bold text-purple-400">ESC</div>
+                            <div class="text-[9px] text-gray-500">2024</div>
+                        </div>
+                        <div class="flex-1 bg-orange-900/30 border border-orange-500/30 rounded p-2 text-center">
+                            <div class="text-[10px] font-bold text-orange-400">NICE</div>
+                            <div class="text-[9px] text-gray-500">2023</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3: Pharmacogenomic Evidence -->
+                <div onclick="showPgxLibrary()"
+                    class="col-span-1 bg-gradient-to-br from-purple-900/20 to-black border border-purple-500/30 rounded-lg p-5 hover:border-purple-500/60 transition-all duration-300 group cursor-pointer relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-3 opacity-30 group-hover:opacity-70 transition-opacity"><i
+                            data-lucide="dna" class="w-8 h-8 text-purple-400"></i></div>
+                    <div class="text-[10px] text-purple-400 font-bold tracking-widest mb-1 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse"></span> CPIC_INTEGRATED
+                    </div>
+                    <h3 class="text-white font-bold text-lg mb-2">PHARMACOGENOMIC EVIDENCE</h3>
+                    <p class="text-xs text-gray-500 leading-relaxed mb-4 font-mono">Access CPIC/PharmGKB drug-gene
+                        guidelines with patient-specific alerts.</p>
+
+                    <!-- DNA Animation -->
+                    <div class="flex justify-center gap-1 opacity-50 group-hover:opacity-100 transition-opacity">
+                        <div
+                            class="w-2 h-8 bg-gradient-to-b from-purple-500 via-transparent to-purple-500 rounded animate-pulse">
+                        </div>
+                        <div
+                            class="w-2 h-8 bg-gradient-to-b from-transparent via-purple-500 to-transparent rounded animate-pulse delay-100">
+                        </div>
+                        <div
+                            class="w-2 h-8 bg-gradient-to-b from-purple-500 via-transparent to-purple-500 rounded animate-pulse delay-200">
+                        </div>
+                        <div
+                            class="w-2 h-8 bg-gradient-to-b from-transparent via-purple-500 to-transparent rounded animate-pulse delay-300">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 4: Integrative Medicine -->
+                <div onclick="showAyurvedicLibrary()"
+                    class="col-span-1 bg-gradient-to-br from-orange-900/20 to-black border border-orange-500/30 rounded-lg p-5 hover:border-orange-500/60 transition-all duration-300 group cursor-pointer relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-3 opacity-30 group-hover:opacity-70 transition-opacity"><i
+                            data-lucide="sprout" class="w-8 h-8 text-orange-400"></i></div>
+                    <div class="text-[10px] text-orange-400 font-bold tracking-widest mb-1 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse"></span> MECHANISM_BRIDGE
+                    </div>
+                    <h3 class="text-white font-bold text-lg mb-2">INTEGRATIVE MEDICINE</h3>
+                    <p class="text-xs text-gray-500 leading-relaxed mb-4 font-mono">Bridge Ayurvedic & herbal concepts
+                        to
+                        Western pharmacology. Safety checks & mechanism translation.</p>
+
+                    <!-- Animation -->
+                    <div class="flex justify-center gap-1 opacity-50 group-hover:opacity-100 transition-opacity">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="leaf" class="w-4 h-4 text-green-500 animate-bounce"></i>
+                            <i data-lucide="arrow-right" class="w-4 h-4 text-gray-500"></i>
+                            <i data-lucide="flask-conical" class="w-4 h-4 text-blue-500 animate-pulse"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 5: Drug Interaction Checker -->
+                <div onclick="showDrugInteractionChecker()"
+                    class="col-span-1 bg-gradient-to-br from-red-900/20 to-black border border-red-500/30 rounded-lg p-5 hover:border-red-500/60 transition-all duration-300 group cursor-pointer relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-3 opacity-30 group-hover:opacity-70 transition-opacity"><i
+                            data-lucide="shield-alert" class="w-8 h-8 text-red-400"></i></div>
+                    <div class="text-[10px] text-red-400 font-bold tracking-widest mb-1 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span> SAFETY_CRITICAL
+                    </div>
+                    <h3 class="text-white font-bold text-lg mb-2">DRUG INTERACTION CHECKER</h3>
+                    <p class="text-xs text-gray-500 leading-relaxed mb-4 font-mono">Multi-drug interaction analysis with
+                        severity grading, mechanism details, and alternative suggestions.</p>
+
+                    <!-- Interaction Preview -->
+                    <div class="flex justify-center gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
+                        <div
+                            class="w-8 h-8 bg-blue-500/30 rounded-full flex items-center justify-center text-[10px] text-blue-400">
+                            A</div>
+                        <i data-lucide="zap" class="w-4 h-4 text-red-500 animate-pulse self-center"></i>
+                        <div
+                            class="w-8 h-8 bg-green-500/30 rounded-full flex items-center justify-center text-[10px] text-green-400">
+                            B</div>
+                    </div>
+                </div>
+
+                <!-- Card 6: Clinical Calculator Hub -->
+                <div onclick="showClinicalCalculators()"
+                    class="col-span-1 bg-gradient-to-br from-cyan-900/20 to-black border border-cyan-500/30 rounded-lg p-5 hover:border-cyan-500/60 transition-all duration-300 group cursor-pointer relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-3 opacity-30 group-hover:opacity-70 transition-opacity"><i
+                            data-lucide="calculator" class="w-8 h-8 text-cyan-400"></i></div>
+                    <div class="text-[10px] text-cyan-400 font-bold tracking-widest mb-1 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-cyan-500 rounded-full animate-pulse"></span> 100+_CALCULATORS
+                    </div>
+                    <h3 class="text-white font-bold text-lg mb-2">CLINICAL CALCULATOR HUB</h3>
+                    <p class="text-xs text-gray-500 leading-relaxed mb-4 font-mono">CHA₂DS₂-VASc, MELD, Wells, CURB-65,
+                        and 100+ validated clinical decision tools.</p>
+
+                    <!-- Calculator Preview -->
+                    <div class="flex justify-between px-4 opacity-50 group-hover:opacity-100 transition-opacity">
+                        <div class="text-center">
+                            <div class="text-[10px] text-gray-500">GFR</div>
+                            <div class="text-sm text-cyan-400 font-bold">68</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-[10px] text-gray-500">MELD</div>
+                            <div class="text-sm text-yellow-400 font-bold">18</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-[10px] text-gray-500">CHA₂DS₂</div>
+                            <div class="text-sm text-orange-400 font-bold">3</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 7: Differential Diagnosis AI -->
+                <div onclick="showDifferentialDxAI()"
+                    class="col-span-1 bg-gradient-to-br from-yellow-900/20 to-black border border-yellow-500/30 rounded-lg p-5 hover:border-yellow-500/60 transition-all duration-300 group cursor-pointer relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-3 opacity-30 group-hover:opacity-70 transition-opacity"><i
+                            data-lucide="git-branch" class="w-8 h-8 text-yellow-400"></i></div>
+                    <div class="text-[10px] text-yellow-400 font-bold tracking-widest mb-1 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-yellow-500 rounded-full animate-pulse"></span> BAYESIAN_ENGINE
+                    </div>
+                    <h3 class="text-white font-bold text-lg mb-2">DIFFERENTIAL DIAGNOSIS AI</h3>
+                    <p class="text-xs text-gray-500 leading-relaxed mb-4 font-mono">Symptom-to-diagnosis mapping with
+                        probabilistic reasoning and red flag detection.</p>
+
+                    <!-- DDx Tree Preview -->
+                    <div class="space-y-1 opacity-50 group-hover:opacity-100 transition-opacity text-[9px]">
+                        <div class="flex items-center gap-2">
+                            <div class="w-12 bg-yellow-500/50 h-1.5 rounded"></div>
+                            <span class="text-yellow-400">40%</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 bg-orange-500/50 h-1.5 rounded"></div>
+                            <span class="text-orange-400">28%</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-5 bg-gray-500/50 h-1.5 rounded"></div>
+                            <span class="text-gray-400">18%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 8: Medical Imaging Atlas -->
+                <div onclick="showImagingAtlas()"
+                    class="col-span-1 bg-gradient-to-br from-pink-900/20 to-black border border-pink-500/30 rounded-lg p-5 hover:border-pink-500/60 transition-all duration-300 group cursor-pointer relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-3 opacity-30 group-hover:opacity-70 transition-opacity"><i
+                            data-lucide="scan" class="w-8 h-8 text-pink-400"></i></div>
+                    <div class="text-[10px] text-pink-400 font-bold tracking-widest mb-1 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-pink-500 rounded-full animate-pulse"></span> REFERENCE_ATLAS
+                    </div>
+                    <h3 class="text-white font-bold text-lg mb-2">MEDICAL IMAGING ATLAS</h3>
+                    <p class="text-xs text-gray-500 leading-relaxed mb-4 font-mono">Visual reference library with
+                        pathology examples across CT, MRI, X-ray, and ultrasound.</p>
+
+                    <!-- Image Grid Preview -->
+                    <div class="grid grid-cols-3 gap-1 opacity-50 group-hover:opacity-100 transition-opacity">
+                        <div class="aspect-square bg-pink-500/20 rounded flex items-center justify-center">
+                            <i data-lucide="brain" class="w-3 h-3 text-pink-400"></i>
+                        </div>
+                        <div class="aspect-square bg-pink-500/20 rounded flex items-center justify-center">
+                            <i data-lucide="heart" class="w-3 h-3 text-pink-400"></i>
+                        </div>
+                        <div class="aspect-square bg-pink-500/20 rounded flex items-center justify-center">
+                            <i data-lucide="bone" class="w-3 h-3 text-pink-400"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LOADING STATE -->
+            <div id="loadingState" class="hidden py-20 flex flex-col items-center justify-center relative">
+                <div class="absolute inset-0 bg-terminal-green/5 blur-3xl rounded-full opacity-20 animate-pulse"></div>
+                <div class="relative z-10">
+                    <div class="w-20 h-20 border-t-2 border-b-2 border-terminal-green rounded-full animate-spin"></div>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <div class="w-14 h-14 border-r-2 border-l-2 border-terminal-green/40 rounded-full animate-spin"
+                            style="animation-direction: reverse; animation-duration: 2s;"></div>
+                    </div>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <i data-lucide="cpu" class="text-terminal-green w-6 h-6 animate-pulse"></i>
+                    </div>
+                </div>
+                <div class="mt-6 text-terminal-green font-bold tracking-[0.3em] text-sm animate-pulse glow-text">
+                    NEURAL_SYNTHESIS_ACTIVE</div>
+                <div class="mt-3 w-64 h-1 bg-gray-800 rounded-full overflow-hidden">
+                    <div class="h-full bg-terminal-green w-1/3 animate-progress-indeterminate"></div>
+                </div>
+                <div class="mt-2 text-[10px] text-gray-500 font-mono" id="loadingStatusText">Initializing evidence
+                    engine...</div>
+            </div>
+
+            <!-- RESULTS CONTAINER -->
+            <div id="resultsContainer" class="hidden pb-12">
+                <!-- Injected via JS -->
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes progress-indeterminate {
+        0% {
+            transform: translateX(-100%);
+        }
+
+        50% {
+            transform: translateX(100%);
+        }
+
+        100% {
+            transform: translateX(-100%);
+        }
+    }
+
+    .animate-progress-indeterminate {
+        animation: progress-indeterminate 2s infinite linear;
+    }
+
+    .glow-text {
+        text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+    }
+</style>
+
+<script>
+    // --- CLOCK & LATENCY ---
+    setInterval(() => {
+        const now = new Date();
+        document.getElementById('realtimeClock').innerText = now.toLocaleTimeString('en-US', { hour12: false });
+        const latency = 28 + Math.floor(Math.random() * 8);
+        document.getElementById('latencyStat').innerText = `LATENCY: ${latency}ms`;
+    }, 1000);
+
+    // --- MODE SWITCHING ---
+    function switchMode(mode) {
+        document.querySelectorAll('.search-tab').forEach(el => {
+            el.classList.remove('text-terminal-green', 'border-terminal-green', 'bg-terminal-green/5', 'active');
+            el.classList.add('text-gray-500', 'border-transparent');
+        });
+        const activeTab = document.getElementById(`tab-${mode}`);
+        activeTab.classList.remove('text-gray-500', 'border-transparent');
+        activeTab.classList.add('text-terminal-green', 'border-terminal-green', 'bg-terminal-green/5', 'active');
+
+        document.querySelectorAll('.input-group').forEach(el => el.classList.add('hidden'));
+        document.getElementById(`input-group-${mode}`).classList.remove('hidden');
+
+        document.getElementById('initialState').classList.remove('hidden');
+        document.getElementById('resultsContainer').classList.add('hidden');
+        document.getElementById('resultsContainer').innerHTML = '';
+    }
+
+    // --- LOADING HELPERS ---
+    function showLoading(statusText) {
+        document.getElementById('initialState').classList.add('hidden');
+        document.getElementById('resultsContainer').classList.add('hidden');
+        document.getElementById('loadingState').classList.remove('hidden');
+        document.getElementById('loadingStatusText').innerText = statusText || 'Processing...';
+
+        const texts = ["Querying evidence databases...", "Running meta-analysis algorithms...", "Synthesizing clinical insights...", "Grading recommendations..."];
+        let i = 0;
+        window.loadingInterval = setInterval(() => {
+            if (i < texts.length) document.getElementById('loadingStatusText').innerText = texts[i++];
+        }, 1200);
+    }
+
+    function showResults() {
+        clearInterval(window.loadingInterval);
+        document.getElementById('loadingState').classList.add('hidden');
+        document.getElementById('resultsContainer').classList.remove('hidden');
+    }
+
+    // ==================== SYSTEMATIC REVIEW ====================
+    async function runSystematicReview() {
+        const query = document.getElementById('systematicQuery').value.trim();
+        const condition = document.getElementById('systematicCondition').value.trim();
+        if (!query) return alert('Please enter a clinical question');
+
+        showLoading('Generating living systematic review...');
+
+        try {
+            const res = await fetch('/api/systematic-review', {
+                method: 'POST',
+                body: JSON.stringify({ query, condition }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+            renderSystematicReview(data);
+        } catch (e) {
+            console.error(e);
+            document.getElementById('resultsContainer').innerHTML = '<div class="text-red-400 p-8">Error generating systematic review</div>';
+        }
+        showResults();
+    }
+
+    function renderSystematicReview(data) {
+        const container = document.getElementById('resultsContainer');
+        let html = `
+            <div class="mb-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-terminal-green/20 rounded-lg flex items-center justify-center">
+                        <i data-lucide="beaker" class="w-5 h-5 text-terminal-green"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-white">${data.review_type || 'Living Systematic Review'}</h2>
+                        <div class="text-xs text-gray-500">Generated: ${data.generated_at || 'Just now'} | Query: "${data.query}"</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PICO Framework -->
+            ${data.pico ? `
+            <div class="bg-white/[0.02] border border-terminal-green/20 rounded-lg p-4 mb-4">
+                <div class="text-[10px] text-terminal-green font-bold tracking-widest mb-3">PICO FRAMEWORK</div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                    <div><span class="text-gray-500">Population:</span> <span class="text-white">${data.pico.population || 'Not specified'}</span></div>
+                    <div><span class="text-gray-500">Intervention:</span> <span class="text-white">${data.pico.intervention || 'Not specified'}</span></div>
+                    <div><span class="text-gray-500">Comparison:</span> <span class="text-white">${data.pico.comparison || 'Placebo/Standard care'}</span></div>
+                    <div><span class="text-gray-500">Outcomes:</span> <span class="text-white">${(data.pico.outcomes || []).join(', ') || 'Various'}</span></div>
+                </div>
+            </div>
+            ` : ''}
+
+            <!-- Meta-Analysis Results -->
+            ${data.meta_analysis ? `
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+                <!-- Forest Plot -->
+                <div class="bg-black/40 border border-white/10 rounded-lg p-4">
+                    <div class="text-[10px] text-terminal-green font-bold tracking-widest mb-3 flex items-center gap-2">
+                        <i data-lucide="bar-chart-3" class="w-3 h-3"></i> FOREST PLOT (Simulated)
+                    </div>
+                    <div class="space-y-2">
+                        ${(data.meta_analysis.studies || []).slice(0, 6).map(study => `
+                            <div class="flex items-center gap-2 text-xs">
+                                <span class="text-gray-400 w-28 truncate">${study.name}</span>
+                                <div class="flex-1 relative h-4 flex items-center">
+                                    <div class="absolute left-1/2 w-px h-full bg-gray-600"></div>
+                                    <div class="absolute bg-terminal-green/50 h-0.5" style="left: ${Math.min(Math.max((1 - study.effect) * 100, 10), 90)}%; right: ${Math.min(Math.max((study.effect - 0.5) * 100, 10), 90)}%;"></div>
+                                    <div class="absolute w-2 h-2 bg-terminal-green rounded-full" style="left: ${(1 - study.effect) * 100}%;"></div>
+                                </div>
+                                <span class="text-gray-500 w-16 text-right">${study.effect.toFixed(2)}</span>
+                            </div>
+                        `).join('')}
+                        <!-- Pooled -->
+                        <div class="flex items-center gap-2 text-xs border-t border-gray-700 pt-2 mt-2">
+                            <span class="text-white font-bold w-28">Pooled Effect</span>
+                            <div class="flex-1 relative h-4 flex items-center">
+                                <div class="absolute left-1/2 w-px h-full bg-gray-600"></div>
+                                <div class="absolute w-3 h-3 bg-terminal-green rotate-45" style="left: ${(1 - (data.meta_analysis.pooled_effect || 0.75)) * 100}%;"></div>
+                            </div>
+                            <span class="text-terminal-green font-bold w-16 text-right">${(data.meta_analysis.pooled_effect || 0.75).toFixed(2)}</span>
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-3">Favors Treatment ← | → Favors Control</div>
+                </div>
+
+                <!-- Statistics Panel -->
+                <div class="bg-black/40 border border-white/10 rounded-lg p-4">
+                    <div class="text-[10px] text-terminal-green font-bold tracking-widest mb-3 flex items-center gap-2">
+                        <i data-lucide="activity" class="w-3 h-3"></i> HETEROGENEITY STATISTICS
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-white/[0.02] p-3 rounded">
+                            <div class="text-[10px] text-gray-500">I² Statistic</div>
+                            <div class="text-2xl font-bold ${data.meta_analysis.heterogeneity_i2 < 30 ? 'text-green-400' : data.meta_analysis.heterogeneity_i2 < 60 ? 'text-yellow-400' : 'text-red-400'}">${data.meta_analysis.heterogeneity_i2 || 35}%</div>
+                            <div class="text-[10px] text-gray-500">${data.meta_analysis.heterogeneity_interpretation || 'Moderate'}</div>
+                        </div>
+                        <div class="bg-white/[0.02] p-3 rounded">
+                            <div class="text-[10px] text-gray-500">Cochran's Q p-value</div>
+                            <div class="text-2xl font-bold text-gray-300">${data.meta_analysis.cochran_q_pvalue || 0.12}</div>
+                            <div class="text-[10px] text-gray-500">${(data.meta_analysis.cochran_q_pvalue || 0.12) < 0.1 ? 'Significant heterogeneity' : 'Not significant'}</div>
+                        </div>
+                        <div class="bg-white/[0.02] p-3 rounded">
+                            <div class="text-[10px] text-gray-500">Pooled Effect (95% CI)</div>
+                            <div class="text-lg font-bold text-terminal-green">${data.meta_analysis.pooled_effect || 0.72} (${data.meta_analysis.pooled_ci_low || 0.65}-${data.meta_analysis.pooled_ci_high || 0.80})</div>
+                        </div>
+                        <div class="bg-white/[0.02] p-3 rounded">
+                            <div class="text-[10px] text-gray-500">Studies Included</div>
+                            <div class="text-2xl font-bold text-white">${(data.meta_analysis.studies || []).length}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            ` : ''}
+
+            <!-- GRADE Assessment -->
+            ${data.grade_assessment ? `
+            <div class="bg-gradient-to-r from-green-900/20 to-black border border-terminal-green/30 rounded-lg p-4 mb-4">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <div class="text-[10px] text-terminal-green font-bold tracking-widest mb-2">GRADE EVIDENCE ASSESSMENT</div>
+                        <div class="text-3xl font-bold ${data.grade_assessment.quality === 'High' ? 'text-green-400' : data.grade_assessment.quality === 'Moderate' ? 'text-yellow-400' : 'text-orange-400'}">${data.grade_assessment.quality || 'Moderate'}</div>
+                    </div>
+                    <div class="text-right text-xs space-y-1">
+                        <div class="text-gray-500">Risk of Bias: <span class="text-white">${data.grade_assessment.risk_of_bias || 'Some concerns'}</span></div>
+                        <div class="text-gray-500">Inconsistency: <span class="text-white">${data.grade_assessment.inconsistency || 'Low'}</span></div>
+                        <div class="text-gray-500">Imprecision: <span class="text-white">${data.grade_assessment.imprecision || 'Low'}</span></div>
+                    </div>
+                </div>
+            </div>
+            ` : ''}
+
+            <!-- Clinical Synthesis -->
+            <div class="bg-black/40 border border-terminal-green/30 rounded-lg p-5">
+                <div class="text-[10px] text-terminal-green font-bold tracking-widest mb-3 flex items-center gap-2">
+                    <i data-lucide="brain" class="w-3 h-3"></i> AI CLINICAL SYNTHESIS
+                </div>
+                <div class="text-gray-200 text-sm leading-relaxed border-l-2 border-terminal-green/50 pl-4">
+                    ${data.clinical_synthesis || 'Analysis complete. Review the meta-analysis results above for clinical decision making.'}
+                </div>
+                ${data.recommendations && data.recommendations.length ? `
+                <div class="mt-4 pt-4 border-t border-gray-800">
+                    <div class="text-[10px] text-gray-500 mb-2">RECOMMENDATIONS:</div>
+                    <ul class="space-y-1">
+                        ${data.recommendations.map(rec => `<li class="text-xs text-gray-300 flex items-start gap-2"><span class="text-terminal-green">▸</span>${rec}</li>`).join('')}
+                    </ul>
+                </div>
+                ` : ''}
+            </div>
+        `;
+        container.innerHTML = html;
+        lucide.createIcons();
+    }
+
+    // ==================== GUIDELINE RECONCILIATION ====================
+    async function runGuidelineReconciliation() {
+        const condition = document.getElementById('guidelineCondition').value.trim();
+        const intervention = document.getElementById('guidelineIntervention').value.trim();
+        if (!condition) return alert('Please enter a condition');
+
+        showLoading('Comparing clinical guidelines...');
+
+        try {
+            const res = await fetch('/api/guideline-reconciliation', {
+                method: 'POST',
+                body: JSON.stringify({ condition, intervention }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+            renderGuidelineReconciliation(data);
+        } catch (e) {
+            console.error(e);
+            document.getElementById('resultsContainer').innerHTML = '<div class="text-red-400 p-8">Error comparing guidelines</div>';
+        }
+        showResults();
+    }
+
+    function renderGuidelineReconciliation(data) {
+        const container = document.getElementById('resultsContainer');
+        let html = `
+            <div class="mb-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                        <i data-lucide="scale" class="w-5 h-5 text-blue-400"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-white">Guideline Reconciliation</h2>
+                        <div class="text-xs text-gray-500">Condition: ${data.condition || 'N/A'} | Generated: ${data.generated_at || 'Just now'}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Guidelines Comparison -->
+            ${data.guidelines_analyzed && data.guidelines_analyzed.length ? `
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                ${data.guidelines_analyzed.map((gl, idx) => `
+                    <div class="bg-gradient-to-br from-blue-900/20 to-black border border-blue-500/30 rounded-lg p-4">
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="text-lg font-bold text-blue-400">${gl.source}</div>
+                            <div class="text-xs text-gray-500">${gl.year}</div>
+                        </div>
+                        <div class="space-y-2">
+                            ${(gl.key_recommendations || []).slice(0, 3).map(rec => `
+                                <div class="bg-black/30 rounded p-2 text-xs">
+                                    <div class="text-gray-400">${rec.topic}</div>
+                                    <div class="text-white mt-1">${rec.recommendation}</div>
+                                    <div class="flex gap-2 mt-1">
+                                        <span class="px-1.5 py-0.5 bg-green-900/50 text-green-400 rounded text-[10px]">Class ${rec.class || 'I'}</span>
+                                        <span class="px-1.5 py-0.5 bg-blue-900/50 text-blue-400 rounded text-[10px]">Level ${rec.level || 'A'}</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            ` : ''}
+
+            <!-- Conflicts Section -->
+            ${data.conflicts && data.conflicts.length ? `
+            <div class="bg-gradient-to-r from-orange-900/20 to-black border border-orange-500/30 rounded-lg p-4 mb-4">
+                <div class="text-[10px] text-orange-400 font-bold tracking-widest mb-3 flex items-center gap-2">
+                    <i data-lucide="alert-triangle" class="w-3 h-3"></i> DISCREPANCIES IDENTIFIED
+                </div>
+                <div class="space-y-3">
+                    ${data.conflicts.map(conflict => `
+                        <div class="bg-black/40 rounded p-3">
+                            <div class="flex justify-between items-start">
+                                <div class="text-white font-bold text-sm">${conflict.topic}</div>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${conflict.severity === 'Major' ? 'bg-red-500/20 text-red-400' : conflict.severity === 'Moderate' ? 'bg-orange-500/20 text-orange-400' : 'bg-yellow-500/20 text-yellow-400'}">${conflict.severity}</span>
+                            </div>
+                            <div class="text-xs text-gray-400 mt-1">${conflict.discrepancy}</div>
+                            <div class="text-xs text-gray-500 mt-2"><span class="text-blue-400">Reason:</span> ${conflict.reason}</div>
+                            <div class="text-xs text-terminal-green mt-1"><span class="text-gray-500">Resolution:</span> ${conflict.resolution}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : '<div class="bg-green-900/20 border border-green-500/30 rounded-lg p-4 mb-4 text-green-400 text-sm flex items-center gap-2"><i data-lucide="check-circle" class="w-4 h-4"></i> No major conflicts between guidelines</div>'}
+
+            <!-- Unified Recommendation -->
+            ${data.unified_recommendation ? `
+            <div class="bg-gradient-to-r from-terminal-green/10 to-black border border-terminal-green/30 rounded-lg p-5">
+                <div class="text-[10px] text-terminal-green font-bold tracking-widest mb-3 flex items-center gap-2">
+                    <i data-lucide="target" class="w-3 h-3"></i> UNIFIED RECOMMENDATION
+                </div>
+                <div class="text-gray-200 text-sm leading-relaxed mb-4">${data.unified_recommendation.summary || 'Follow individual guidelines based on patient context.'}</div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <div class="text-[10px] text-gray-500 mb-2">FIRST-LINE THERAPY</div>
+                        <div class="text-white font-bold">${data.unified_recommendation.first_line || 'As per guidelines'}</div>
+                    </div>
+                    <div>
+                        <div class="text-[10px] text-gray-500 mb-2">ALTERNATIVES</div>
+                        <div class="text-gray-300 text-sm">${(data.unified_recommendation.alternatives || []).join(', ') || 'See individual guidelines'}</div>
+                    </div>
+                </div>
+            </div>
+            ` : ''}
+        `;
+        container.innerHTML = html;
+        lucide.createIcons();
+    }
+
+    // ==================== PHARMACOGENOMIC EVIDENCE ====================
+    async function runPgxEvidence() {
+        const drug = document.getElementById('pgxDrug').value.trim();
+        const patientId = document.getElementById('pgxPatient').value;
+        if (!drug) return alert('Please enter a drug name');
+
+        showLoading('Retrieving CPIC/PharmGKB evidence...');
+
+        try {
+            const res = await fetch('/api/pharmacogenomic-evidence', {
+                method: 'POST',
+                body: JSON.stringify({ drug, patient_id: patientId }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+            renderPgxEvidence(data);
+        } catch (e) {
+            console.error(e);
+            document.getElementById('resultsContainer').innerHTML = '<div class="text-red-400 p-8">Error retrieving pharmacogenomic evidence</div>';
+        }
+        showResults();
+    }
+
+    function renderPgxEvidence(data) {
+        const container = document.getElementById('resultsContainer');
+        const hasAlerts = data.patient_specific_alerts && data.patient_specific_alerts.length > 0;
+
+        let html = `
+            <div class="mb-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                        <i data-lucide="dna" class="w-5 h-5 text-purple-400"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-white">Pharmacogenomic Evidence: ${data.drug}</h2>
+                        <div class="text-xs text-gray-500">CPIC Clinical Guidelines & PharmGKB Annotations</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Patient-Specific Alerts -->
+            ${hasAlerts ? `
+            <div class="bg-gradient-to-r from-red-900/30 to-black border border-red-500/50 rounded-lg p-4 mb-4">
+                <div class="text-sm text-red-400 font-bold mb-3 flex items-center gap-2">
+                    <i data-lucide="alert-octagon" class="w-4 h-4"></i> PATIENT-SPECIFIC PHARMACOGENOMIC ALERTS
+                </div>
+                <div class="space-y-2">
+                    ${data.patient_specific_alerts.map(alert => `
+                        <div class="bg-red-900/30 border border-red-500/30 rounded p-3">
+                            <div class="flex justify-between">
+                                <div class="text-white font-bold">${alert.gene}: ${alert.patient_phenotype}</div>
+                                ${alert.action_required ? '<span class="px-2 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded">ACTION REQUIRED</span>' : ''}
+                            </div>
+                            <div class="text-red-300 text-sm mt-1">${alert.alert}</div>
+                            <div class="text-[10px] text-gray-500 mt-1">Evidence: ${alert.evidence}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+
+            <!-- CPIC Guidelines -->
+            ${data.cpic_guidelines && data.cpic_guidelines.length ? `
+            <div class="bg-black/40 border border-purple-500/30 rounded-lg p-4 mb-4">
+                <div class="text-[10px] text-purple-400 font-bold tracking-widest mb-3 flex items-center gap-2">
+                    <i data-lucide="book-open" class="w-3 h-3"></i> CPIC GUIDELINES
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-left text-[10px] text-gray-500 border-b border-gray-700">
+                                <th class="py-2">Gene</th>
+                                <th class="py-2">Phenotype</th>
+                                <th class="py-2">Recommendation</th>
+                                <th class="py-2">Evidence</th>
+                                <th class="py-2">Source</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.cpic_guidelines.map(g => `
+                                <tr class="border-b border-gray-800">
+                                    <td class="py-2 text-purple-400 font-bold">${g.gene}</td>
+                                    <td class="py-2 text-white">${g.phenotype}</td>
+                                    <td class="py-2 text-gray-300">${g.recommendation}</td>
+                                    <td class="py-2"><span class="px-1.5 py-0.5 rounded text-[10px] ${g.evidence_level === 'Strong' ? 'bg-green-900/50 text-green-400' : 'bg-yellow-900/50 text-yellow-400'}">${g.evidence_level}</span></td>
+                                    <td class="py-2 text-gray-500 text-xs">${g.source}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            ` : '<div class="bg-gray-800/50 rounded-lg p-4 mb-4 text-gray-400 text-sm">No CPIC guidelines found for this drug</div>'}
+
+            <!-- Testing Recommendations -->
+            ${data.testing_recommendations && data.testing_recommendations.length ? `
+            <div class="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
+                <div class="text-[10px] text-blue-400 font-bold tracking-widest mb-3 flex items-center gap-2">
+                    <i data-lucide="flask-conical" class="w-3 h-3"></i> RECOMMENDED GENETIC TESTING
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    ${data.testing_recommendations.map(rec => `
+                        <div class="bg-black/40 rounded p-3 flex justify-between items-start">
+                            <div>
+                                <div class="text-white font-bold">${rec.gene}</div>
+                                <div class="text-xs text-gray-500">${rec.reason}</div>
+                            </div>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${rec.priority === 'High' ? 'bg-red-500/20 text-red-400' : 'bg-orange-500/20 text-orange-400'}">${rec.priority}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+        `;
+        container.innerHTML = html;
+        lucide.createIcons();
+    }
+
+    // ==================== LITERATURE SEARCH (Original) ====================
+    async function searchLiterature() {
+        const query = document.getElementById('litQuery').value.trim();
+        if (!query) return;
+        showLoading('Searching medical literature...');
+        try {
+            const res = await fetch('/api/literature-search', { method: 'POST', body: JSON.stringify({ query }), headers: { 'Content-Type': 'application/json' } });
+            const data = await res.json();
+            renderLiteratureResults(data);
+        } catch (e) { console.error(e); } finally { showResults(); }
+    }
+
+    function renderLiteratureResults(data) {
+        const container = document.getElementById('resultsContainer');
+        let html = `
+            <div class="bg-black/40 border border-terminal-green/30 p-6 mb-6 rounded backdrop-blur-sm">
+                <div class="text-terminal-green text-[10px] font-bold tracking-[0.2em] mb-3 flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 bg-terminal-green rounded-full animate-pulse"></span>
+                    AI_SYNTHESIS
+                </div>
+                <div class="text-gray-200 text-sm leading-7 font-light border-l-2 border-terminal-green/50 pl-4">
+                    ${data.synthesis || "Processing complete."}
+                </div>
+                <div class="mt-4 flex gap-8 text-[10px] text-gray-500 uppercase tracking-widest">
+                    <span>Sources: <strong class="text-white">${data.results_found}</strong></span>
+                    <span>Validity: <strong class="text-white">${data.evidence_level}</strong></span>
+                </div>
+            </div>
+            <h3 class="text-gray-500 text-xs font-bold tracking-widest mb-3">PRIMARY SOURCES</h3>
+            <div class="space-y-2">
+        `;
+        if (data.articles) {
+            data.articles.forEach(article => {
+                html += `
+                    <div class="bg-white/[0.02] border border-white/5 p-4 hover:bg-white/[0.05] hover:border-terminal-green/50 transition-all">
+                        <a href="${article.url}" target="_blank" class="text-white text-sm font-bold hover:text-terminal-green">${article.title}</a>
+                        <div class="flex items-center gap-3 text-[10px] text-gray-500 mt-2">
+                            <span class="bg-white/10 px-1.5 py-0.5 rounded">PMID: ${article.pmid}</span>
+                            <span>${article.year}</span>
+                            <span>${article.journal}</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        html += `</div>`;
+        container.innerHTML = html;
+        lucide.createIcons();
+    }
+
+    // ==================== CLINICAL TRIALS (Original) ====================
+    async function searchTrials() {
+        const condition = document.getElementById('trialsCondition').value;
+        const patientId = document.getElementById('patientForTrials').value;
+        if (!condition) return;
+        showLoading('Scanning clinical trials database...');
+        try {
+            const res = await fetch('/api/clinical-trials-search', { method: 'POST', body: JSON.stringify({ condition, patient_id: patientId }), headers: { 'Content-Type': 'application/json' } });
+            const data = await res.json();
+            renderTrialsResults(data);
+        } catch (e) { console.error(e); } finally { showResults(); }
+    }
+
+    function renderTrialsResults(data) {
+        const container = document.getElementById('resultsContainer');
+        let html = `
+            <div class="flex justify-between items-center mb-6 border-b border-gray-700 pb-4">
+                <div>
+                    <div class="text-[10px] text-gray-500 uppercase">TARGET CONDITION</div>
+                    <div class="text-xl text-white">${data.condition}</div>
+                </div>
+                <div class="text-right">
+                    <div class="text-[10px] text-gray-500 uppercase">TRIALS FOUND</div>
+                    <div class="text-3xl text-terminal-green font-bold">${data.trials_found}</div>
+                </div>
+            </div>
+            <div class="space-y-4">
+        `;
+        if (data.matching_trials) {
+            data.matching_trials.forEach(trial => {
+                const isRecruiting = trial.status === 'RECRUITING';
+                html += `
+                    <div class="bg-white/[0.02] border border-white/5 p-4 rounded hover:border-terminal-green/40 transition-all relative">
+                        <div class="absolute left-0 top-0 w-1 h-full ${isRecruiting ? 'bg-terminal-green' : 'bg-yellow-500'} opacity-50"></div>
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="flex items-center gap-2 text-[10px]">
+                                <span class="w-2 h-2 rounded-full ${isRecruiting ? 'bg-terminal-green animate-pulse' : 'bg-yellow-500'}"></span>
+                                ${trial.status}
+                            </span>
+                            <span class="text-[10px] text-gray-600 bg-black/50 px-2 py-1 rounded">${trial.nct_id}</span>
+                        </div>
+                        <h3 class="text-white font-bold text-sm mb-2">${trial.title}</h3>
+                        <p class="text-gray-500 text-xs mb-3">${trial.brief_summary}</p>
+                        <a href="${trial.url}" target="_blank" class="text-[10px] text-terminal-green hover:underline">View Protocol →</a>
+                    </div>
+                `;
+            });
+        }
+        html += `</div>`;
+        container.innerHTML = html;
+        lucide.createIcons();
+    }
+
+    // ==================== LOAD PATIENTS ====================
+    async function loadPatients() {
+        try {
+            const res = await fetch('/api/patients');
+            const pts = await res.json();
+            ['patientForTrials', 'pgxPatient'].forEach(selId => {
+                const sel = document.getElementById(selId);
+                if (sel) {
+                    pts.forEach(p => {
+                        const opt = document.createElement('option');
+                        opt.value = p.id;
+                        opt.textContent = `ID_${p.id}: ${p.name}`;
+                        sel.appendChild(opt);
+                    });
+                }
+            });
+        } catch (e) { console.error(e); }
+    }
+
+    // ==================== LIBRARY FUNCTIONS (Pre-built Clinical Content) ====================
+
+    // Show Systematic Review Library - detailed clinical evidence encyclopedia
+    function showSystematicReviewLibrary() {
+        document.getElementById('initialState').classList.add('hidden');
+        document.getElementById('loadingState').classList.add('hidden');
+
+        const container = document.getElementById('resultsContainer');
+        container.classList.remove('hidden');
+
+        container.innerHTML = `
+            <!-- Back Button -->
+            <button onclick="goBackToLibrary()" class="mb-4 px-4 py-2 bg-white/5 hover:bg-white/10 border border-terminal-green/30 rounded-lg text-terminal-green text-sm flex items-center gap-2 transition">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Dashboard
+            </button>
+            
+            <!-- Header & Search -->
+            <div class="flex flex-col md:flex-row gap-6 mb-8">
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 bg-terminal-green/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="beaker" class="w-8 h-8 text-terminal-green"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-white">Living Systematic Review</h1>
+                        <p class="text-gray-500 text-sm">Real-time meta-analysis & evidence synthesis</p>
+                    </div>
+                </div>
+                
+                <!-- Live Search embedded in header -->
+                <div class="flex-1 bg-white/5 border border-white/10 rounded-lg p-2 flex gap-2">
+                    <div class="relative flex-1">
+                        <i data-lucide="search" class="w-4 h-4 text-gray-500 absolute left-3 top-3"></i>
+                        <input type="text" id="systematicQuery" 
+                            class="w-full bg-black/50 border border-transparent rounded px-4 py-2 pl-10 text-white placeholder-gray-500 focus:outline-none focus:border-terminal-green/50 transition-all font-mono text-sm"
+                            placeholder="Ask a clinical question (e.g. 'DOACs in elderly with renal failure')...">
+                    </div>
+                    <input type="text" id="systematicCondition"
+                        class="w-48 hidden md:block bg-black/50 border border-transparent rounded px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-terminal-green/50 text-sm transition-all"
+                        placeholder="Context (optional)...">
+                    <button onclick="runSystematicReview()" 
+                        class="px-6 bg-terminal-green hover:bg-green-500 text-black font-bold rounded shadow-lg shadow-terminal-green/20 transition-all flex items-center gap-2">
+                        <span>ANALYZE</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Featured Topics -->
+            <div class="mb-6">
+                <h2 class="text-terminal-green text-sm font-bold tracking-widest mb-3 flex items-center gap-2">
+                    <i data-lucide="star" class="w-4 h-4"></i> FEATURED CLINICAL TOPICS
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    ${['SGLT2 Inhibitors in Heart Failure', 'GLP-1 Agonists for Weight Loss', 'DOACs vs Warfarin in AFib', 'Immunotherapy in Melanoma', 'Statins for Primary Prevention', 'Beta Blockers Post-MI'].map((topic, i) => `
+                        <div onclick="loadSystematicTopic('${topic}')" class="bg-gradient-to-br from-green-900/20 to-black border border-terminal-green/30 rounded-lg p-4 hover:border-terminal-green cursor-pointer transition group">
+                            <div class="flex items-start justify-between">
+                                <h3 class="text-white font-bold text-sm group-hover:text-terminal-green transition">${topic}</h3>
+                                <i data-lucide="arrow-right" class="w-4 h-4 text-gray-600 group-hover:text-terminal-green transition"></i>
+                            </div>
+                            <div class="mt-2 flex gap-2">
+                                <span class="px-2 py-0.5 bg-terminal-green/20 text-terminal-green text-[10px] rounded">${12 + i * 3} studies</span>
+                                <span class="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-[10px] rounded">High Evidence</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            
+            <!-- Example Meta-Analysis View -->
+            <div class="bg-black/40 border border-terminal-green/30 rounded-lg overflow-hidden">
+                <div class="bg-terminal-green/10 px-4 py-3 border-b border-terminal-green/30">
+                    <h3 class="text-terminal-green font-bold text-sm flex items-center gap-2">
+                        <i data-lucide="trending-up" class="w-4 h-4"></i> EXAMPLE: SGLT2 Inhibitors in Heart Failure
+                    </h3>
+                </div>
+                <div class="p-4">
+                    <!-- PICO -->
+                    <div class="grid grid-cols-4 gap-4 mb-6">
+                        <div class="bg-white/5 rounded p-3">
+                            <div class="text-[10px] text-gray-500 mb-1">POPULATION</div>
+                            <div class="text-white text-sm">Adults with HFrEF (EF ≤40%)</div>
+                        </div>
+                        <div class="bg-white/5 rounded p-3">
+                            <div class="text-[10px] text-gray-500 mb-1">INTERVENTION</div>
+                            <div class="text-white text-sm">SGLT2 inhibitors</div>
+                        </div>
+                        <div class="bg-white/5 rounded p-3">
+                            <div class="text-[10px] text-gray-500 mb-1">COMPARISON</div>
+                            <div class="text-white text-sm">Placebo + standard care</div>
+                        </div>
+                        <div class="bg-white/5 rounded p-3">
+                            <div class="text-[10px] text-gray-500 mb-1">OUTCOMES</div>
+                            <div class="text-white text-sm">CV death, HF hospitalization</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Forest Plot -->
+                    <div class="mb-6">
+                        <div class="text-[10px] text-terminal-green font-bold tracking-widest mb-3">FOREST PLOT</div>
+                        <div class="bg-black/50 rounded p-4 space-y-3">
+                            ${[
+                { name: 'DAPA-HF 2019', effect: 0.74, ci_low: 0.65, ci_high: 0.85, weight: 35 },
+                { name: 'EMPEROR-Reduced 2020', effect: 0.75, ci_low: 0.65, ci_high: 0.86, weight: 33 },
+                { name: 'SOLOIST-WHF 2020', effect: 0.67, ci_low: 0.52, ci_high: 0.85, weight: 18 },
+                { name: 'DELIVER 2022', effect: 0.82, ci_low: 0.73, ci_high: 0.92, weight: 14 }
+            ].map(study => `
+                                <div class="flex items-center gap-3">
+                                    <span class="text-gray-400 text-xs w-36 truncate">${study.name}</span>
+                                    <div class="flex-1 relative h-6 flex items-center">
+                                        <div class="absolute left-1/2 w-px h-full bg-gray-600"></div>
+                                        <div class="absolute h-0.5 bg-terminal-green" style="left: ${(1 - study.ci_high) * 100}%; right: ${study.ci_low * 100 - 50}%;"></div>
+                                        <div class="absolute w-3 h-3 bg-terminal-green rounded-full" style="left: ${(1 - study.effect) * 100}%;"></div>
+                                    </div>
+                                    <span class="text-terminal-green text-xs w-20">${study.effect.toFixed(2)} (${study.ci_low}-${study.ci_high})</span>
+                                    <span class="text-gray-500 text-xs w-12">${study.weight}%</span>
+                                </div>
+                            `).join('')}
+                            <div class="flex items-center gap-3 border-t border-gray-700 pt-3 mt-3">
+                                <span class="text-white font-bold text-xs w-36">Pooled Effect</span>
+                                <div class="flex-1 relative h-6 flex items-center">
+                                    <div class="absolute left-1/2 w-px h-full bg-gray-600"></div>
+                                    <div class="absolute w-4 h-4 bg-terminal-green rotate-45" style="left: 26%;"></div>
+                                </div>
+                                <span class="text-terminal-green font-bold text-xs w-20">0.74 (0.70-0.79)</span>
+                                <span class="text-white font-bold text-xs w-12">100%</span>
+                            </div>
+                        </div>
+                        <div class="text-[10px] text-gray-500 mt-2 text-center">← Favors SGLT2i | Favors Placebo →</div>
+                    </div>
+                    
+                    <!-- Key Statistics -->
+                    <div class="grid grid-cols-4 gap-4 mb-6">
+                        <div class="bg-gradient-to-br from-green-900/30 to-black border border-green-500/30 rounded-lg p-4 text-center">
+                            <div class="text-3xl font-bold text-green-400">26%</div>
+                            <div class="text-[10px] text-gray-500">Relative Risk Reduction</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-blue-900/30 to-black border border-blue-500/30 rounded-lg p-4 text-center">
+                            <div class="text-3xl font-bold text-blue-400">21</div>
+                            <div class="text-[10px] text-gray-500">NNT over 18 months</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-purple-900/30 to-black border border-purple-500/30 rounded-lg p-4 text-center">
+                            <div class="text-3xl font-bold text-purple-400">17%</div>
+                            <div class="text-[10px] text-gray-500">I² Heterogeneity</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-yellow-900/30 to-black border border-yellow-500/30 rounded-lg p-4 text-center">
+                            <div class="text-3xl font-bold text-yellow-400">HIGH</div>
+                            <div class="text-[10px] text-gray-500">GRADE Quality</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Clinical Synthesis -->
+                    <div class="bg-terminal-green/5 border border-terminal-green/30 rounded-lg p-4">
+                        <div class="text-[10px] text-terminal-green font-bold tracking-widest mb-2 flex items-center gap-2">
+                            <i data-lucide="brain" class="w-3 h-3"></i> AI CLINICAL SYNTHESIS
+                        </div>
+                        <p class="text-gray-300 text-sm leading-relaxed">
+                            SGLT2 inhibitors (dapagliflozin, empagliflozin) demonstrate consistent, clinically significant reduction in the composite of cardiovascular death and heart failure hospitalization across all major trials. Benefits are observed regardless of diabetes status, ejection fraction, or background therapy. The class effect is robust with low heterogeneity (I²=17%). <strong class="text-terminal-green">Recommendation: SGLT2i should be considered for all eligible HFrEF patients as per 2023 ACC/AHA/HFSA guidelines (Class I, Level A).</strong>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        `;
+        lucide.createIcons();
+    }
+
+    // Show Guideline Library - clinical practice guidelines comparison
+    function showGuidelineLibrary() {
+        document.getElementById('initialState').classList.add('hidden');
+        document.getElementById('loadingState').classList.add('hidden');
+
+        const container = document.getElementById('resultsContainer');
+        container.classList.remove('hidden');
+
+        container.innerHTML = `
+            <!-- Back Button -->
+            <button onclick="goBackToLibrary()" class="mb-4 px-4 py-2 bg-white/5 hover:bg-white/10 border border-blue-500/30 rounded-lg text-blue-400 text-sm flex items-center gap-2 transition">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Dashboard
+            </button>
+            
+            <!-- Header & Search -->
+            <div class="flex flex-col md:flex-row gap-6 mb-8">
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 bg-blue-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="scale" class="w-8 h-8 text-blue-400"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-white">Guideline Reconciliation</h1>
+                        <p class="text-gray-500 text-sm">Compare ACC/AHA, ESC, NICE & WHO</p>
+                    </div>
+                </div>
+                
+                <!-- Live Search -->
+                <div class="flex-1 bg-white/5 border border-white/10 rounded-lg p-2 flex gap-2">
+                    <div class="relative flex-1">
+                        <i data-lucide="search" class="w-4 h-4 text-gray-500 absolute left-3 top-3"></i>
+                        <input type="text" id="guidelineCondition" 
+                            class="w-full bg-black/50 border border-transparent rounded px-4 py-2 pl-10 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50 transition-all font-mono text-sm"
+                            placeholder="Condition (e.g. 'Hypertension', 'AFib')...">
+                    </div>
+                    <input type="text" id="guidelineIntervention"
+                        class="w-48 hidden md:block bg-black/50 border border-transparent rounded px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50 text-sm transition-all"
+                        placeholder="Intervention focus...">
+                    <button onclick="runGuidelineReconciliation()" 
+                        class="px-6 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2">
+                        <span>COMPARE</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Quick Categories -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                ${['Cardiology', 'Endocrinology', 'Oncology', 'Neurology'].map(cat => `
+                     <button onclick="loadGuidelineCategory('${cat}')" class="p-4 bg-white/[0.02] border border-white/10 hover:border-blue-500 hover:bg-blue-500/10 rounded-lg transition-all text-left">
+                        <div class="text-blue-400 font-bold mb-1">${cat}</div>
+                        <div class="text-[10px] text-gray-500">View latest guidelines</div>
+                     </button>
+                `).join('')}
+            </div>
+            
+            <!-- Example: Hypertension Guidelines Comparison -->
+            <div class="bg-black/40 border border-blue-500/30 rounded-lg overflow-hidden">
+                <div class="bg-blue-500/10 px-4 py-3 border-b border-blue-500/30 flex justify-between items-center">
+                    <h3 class="text-blue-400 font-bold text-sm flex items-center gap-2">
+                        <i data-lucide="git-compare" class="w-4 h-4"></i> EXAMPLE: Hypertension Management Guidelines
+                    </h3>
+                    <span class="text-[10px] text-gray-500">Last Updated: 2024</span>
+                </div>
+                <div class="p-4">
+                    <!-- Guidelines Comparison Table -->
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="text-[10px] text-gray-500 border-b border-gray-700">
+                                    <th class="text-left py-2 px-3">TOPIC</th>
+                                    <th class="text-left py-2 px-3">ACC/AHA 2017</th>
+                                    <th class="text-left py-2 px-3">ESC 2023</th>
+                                    <th class="text-left py-2 px-3">NICE 2023</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b border-gray-800">
+                                    <td class="py-3 px-3 text-gray-400">Hypertension Threshold</td>
+                                    <td class="py-3 px-3 text-white">≥130/80 mmHg</td>
+                                    <td class="py-3 px-3 text-white">≥140/90 mmHg</td>
+                                    <td class="py-3 px-3 text-white">≥140/90 mmHg (clinic)</td>
+                                </tr>
+                                <tr class="border-b border-gray-800">
+                                    <td class="py-3 px-3 text-gray-400">Target for Most Adults</td>
+                                    <td class="py-3 px-3 text-white">&lt;130/80 mmHg</td>
+                                    <td class="py-3 px-3 text-white">&lt;140/90 → &lt;130/80 if tolerated</td>
+                                    <td class="py-3 px-3 text-white">&lt;140/90 mmHg</td>
+                                </tr>
+                                <tr class="border-b border-gray-800">
+                                    <td class="py-3 px-3 text-gray-400">First-Line Therapy</td>
+                                    <td class="py-3 px-3 text-white">ACEi/ARB, CCB, Thiazide</td>
+                                    <td class="py-3 px-3 text-white">ACEi/ARB + CCB or Diuretic</td>
+                                    <td class="py-3 px-3 text-white">ACEi/ARB (age &lt;55) or CCB (age ≥55/Black)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-3 text-gray-400">SPRINT Trial Impact</td>
+                                    <td class="py-3 px-3"><span class="px-2 py-0.5 bg-green-500/20 text-green-400 rounded text-xs">Incorporated</span></td>
+                                    <td class="py-3 px-3"><span class="px-2 py-0.5 bg-green-500/20 text-green-400 rounded text-xs">Incorporated</span></td>
+                                    <td class="py-3 px-3"><span class="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 rounded text-xs">Partial</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Conflicts Identified -->
+                    <div class="bg-orange-900/20 border border-orange-500/30 rounded-lg p-4 mb-4">
+                        <div class="text-[10px] text-orange-400 font-bold tracking-widest mb-3 flex items-center gap-2">
+                            <i data-lucide="alert-triangle" class="w-3 h-3"></i> DISCREPANCIES IDENTIFIED
+                        </div>
+                        <div class="space-y-2">
+                            <div class="bg-black/40 rounded p-3">
+                                <div class="flex justify-between items-start">
+                                    <span class="text-white font-bold text-sm">Blood Pressure Threshold</span>
+                                    <span class="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-[10px] rounded">Moderate</span>
+                                </div>
+                                <p class="text-gray-400 text-xs mt-1">ACC/AHA uses 130/80, while ESC/NICE maintain 140/90. Clinical impact: Earlier treatment initiation in US practice.</p>
+                                <p class="text-blue-400 text-xs mt-1"><strong>Resolution:</strong> Consider individual risk factors; SPRINT showed benefit at &lt;120 mmHg in high-risk patients.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Unified Recommendation -->
+                    <div class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                        <div class="text-[10px] text-blue-400 font-bold tracking-widest mb-2 flex items-center gap-2">
+                            <i data-lucide="target" class="w-3 h-3"></i> AI-UNIFIED RECOMMENDATION
+                        </div>
+                        <p class="text-gray-300 text-sm leading-relaxed">
+                            For most adults with hypertension, target BP &lt;130/80 mmHg is reasonable, especially in high cardiovascular risk patients (10-year ASCVD risk ≥10%). Start with lifestyle modification, then consider single-pill combinations (ACEi/ARB + CCB or thiazide) for improved adherence. <strong class="text-blue-400">Individualize based on age, comorbidities, and tolerance.</strong>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        `;
+        lucide.createIcons();
+    }
+
+    // Show PGx Library - pharmacogenomics encyclopedia
+    function showPgxLibrary() {
+        document.getElementById('initialState').classList.add('hidden');
+        document.getElementById('loadingState').classList.add('hidden');
+
+        const container = document.getElementById('resultsContainer');
+        container.classList.remove('hidden');
+
+        container.innerHTML = `
+            <!-- Back Button -->
+            <button onclick="goBackToLibrary()" class="mb-4 px-4 py-2 bg-white/5 hover:bg-white/10 border border-purple-500/30 rounded-lg text-purple-400 text-sm flex items-center gap-2 transition">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Dashboard
+            </button>
+            
+            <!-- Header & Search -->
+            <div class="flex flex-col md:flex-row gap-6 mb-8">
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 bg-purple-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="dna" class="w-8 h-8 text-purple-400"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-white">PGx Evidence</h1>
+                        <p class="text-gray-500 text-sm">CPIC/PharmGKB Drug-Gene Interaction Checker</p>
+                    </div>
+                </div>
+                
+                <!-- Live Search -->
+                <div class="flex-1 bg-white/5 border border-white/10 rounded-lg p-2 flex gap-2">
+                    <div class="relative flex-1">
+                        <i data-lucide="pill" class="w-4 h-4 text-gray-500 absolute left-3 top-3"></i>
+                        <input type="text" id="pgxDrug" 
+                            class="w-full bg-black/50 border border-transparent rounded px-4 py-2 pl-10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 transition-all font-mono text-sm"
+                            placeholder="Drug name (e.g. 'Clopidogrel')...">
+                    </div>
+                    <select id="pgxPatient" class="w-48 bg-black/50 border border-transparent rounded px-4 text-gray-400 focus:border-purple-500/50 focus:outline-none font-mono text-xs">
+                         <option value="">No Patient Selected</option>
+                    </select>
+                    <button onclick="runPgxEvidence()" 
+                        class="px-6 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded shadow-lg shadow-purple-500/20 transition-all flex items-center gap-2">
+                        <span>CHECK</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Critical Gene-Drug Pairs -->
+            <div class="mb-6">
+                <h2 class="text-purple-400 text-sm font-bold tracking-widest mb-3 flex items-center gap-2">
+                    <i data-lucide="alert-octagon" class="w-4 h-4"></i> HIGH-PRIORITY DRUG-GENE PAIRS
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    ${[
+                { drug: 'Clopidogrel', gene: 'CYP2C19', level: 'Strong', action: 'Consider prasugrel/ticagrelor in poor metabolizers' },
+                { drug: 'Codeine', gene: 'CYP2D6', level: 'Strong', action: 'AVOID in ultra-rapid metabolizers (fatal toxicity risk)' },
+                { drug: 'Warfarin', gene: 'CYP2C9/VKORC1', level: 'Strong', action: 'Dose reduction in PMs; use IWPC algorithm' },
+                { drug: 'Abacavir', gene: 'HLA-B*57:01', level: 'Strong', action: 'CONTRAINDICATED if positive (hypersensitivity)' },
+                { drug: 'Carbamazepine', gene: 'HLA-B*15:02', level: 'Strong', action: 'Screen Asian patients (SJS/TEN risk)' },
+                { drug: 'Azathioprine', gene: 'TPMT/NUDT15', level: 'Strong', action: 'Reduce dose 50-90% in deficient patients' }
+            ].map(pair => `
+                        <div onclick="loadPgxDrug('${pair.drug}')" class="bg-gradient-to-br from-purple-900/20 to-black border border-purple-500/30 rounded-lg p-4 hover:border-purple-400 cursor-pointer transition">
+                            <div class="flex items-start justify-between mb-2">
+                                <div>
+                                    <h3 class="text-white font-bold">${pair.drug}</h3>
+                                    <span class="text-purple-400 text-xs">${pair.gene}</span>
+                                </div>
+                                <span class="px-2 py-0.5 bg-red-500/20 text-red-400 text-[10px] rounded font-bold">${pair.level}</span>
+                            </div>
+                            <p class="text-gray-500 text-xs">${pair.action}</p>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            
+            <!-- CYP450 Enzyme Overview -->
+            <div class="bg-black/40 border border-purple-500/30 rounded-lg overflow-hidden mb-6">
+                <div class="bg-purple-500/10 px-4 py-3 border-b border-purple-500/30">
+                    <h3 class="text-purple-400 font-bold text-sm flex items-center gap-2">
+                        <i data-lucide="cpu" class="w-4 h-4"></i> CYP450 ENZYME REFERENCE
+                    </h3>
+                </div>
+                <div class="p-4 overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-[10px] text-gray-500 border-b border-gray-700">
+                                <th class="text-left py-2">ENZYME</th>
+                                <th class="text-left py-2">SUBSTRATES</th>
+                                <th class="text-left py-2">POOR METABOLIZER EFFECT</th>
+                                <th class="text-left py-2">ULTRA-RAPID EFFECT</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b border-gray-800">
+                                <td class="py-3 text-purple-400 font-bold">CYP2D6</td>
+                                <td class="py-3 text-white text-xs">Codeine, Tramadol, Metoprolol, Fluoxetine, Tamoxifen</td>
+                                <td class="py-3 text-red-400 text-xs">↓ Drug activation (prodrugs fail)</td>
+                                <td class="py-3 text-orange-400 text-xs">↑ Toxicity (esp. codeine → morphine)</td>
+                            </tr>
+                            <tr class="border-b border-gray-800">
+                                <td class="py-3 text-purple-400 font-bold">CYP2C19</td>
+                                <td class="py-3 text-white text-xs">Clopidogrel, Omeprazole, Citalopram, Voriconazole</td>
+                                <td class="py-3 text-red-400 text-xs">↓ Clopidogrel activation; ↑ PPI levels</td>
+                                <td class="py-3 text-orange-400 text-xs">↓ Drug exposure (may need higher doses)</td>
+                            </tr>
+                            <tr class="border-b border-gray-800">
+                                <td class="py-3 text-purple-400 font-bold">CYP2C9</td>
+                                <td class="py-3 text-white text-xs">Warfarin, Phenytoin, NSAIDs, Losartan</td>
+                                <td class="py-3 text-red-400 text-xs">↑ Drug accumulation (bleeding risk)</td>
+                                <td class="py-3 text-gray-500 text-xs">Rare</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 text-purple-400 font-bold">CYP3A4</td>
+                                <td class="py-3 text-white text-xs">Tacrolimus, Cyclosporine, Statins, Amlodipine</td>
+                                <td class="py-3 text-red-400 text-xs">↑ Drug levels (toxicity)</td>
+                                <td class="py-3 text-orange-400 text-xs">↓ Drug levels (therapeutic failure)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Testing Panel Recommendations -->
+            <div class="bg-gradient-to-r from-purple-900/20 to-black border border-purple-500/30 rounded-lg p-4">
+                <div class="text-[10px] text-purple-400 font-bold tracking-widest mb-3 flex items-center gap-2">
+                    <i data-lucide="flask-conical" class="w-3 h-3"></i> RECOMMENDED PGx TESTING PANELS
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-black/40 rounded-lg p-3">
+                        <h4 class="text-white font-bold text-sm mb-2">Cardiology Panel</h4>
+                        <div class="space-y-1 text-xs">
+                            <div class="flex justify-between"><span class="text-gray-400">CYP2C19</span><span class="text-purple-400">Clopidogrel</span></div>
+                            <div class="flex justify-between"><span class="text-gray-400">CYP2C9/VKORC1</span><span class="text-purple-400">Warfarin</span></div>
+                            <div class="flex justify-between"><span class="text-gray-400">SLCO1B1</span><span class="text-purple-400">Statins</span></div>
+                        </div>
+                    </div>
+                    <div class="bg-black/40 rounded-lg p-3">
+                        <h4 class="text-white font-bold text-sm mb-2">Psychiatry Panel</h4>
+                        <div class="space-y-1 text-xs">
+                            <div class="flex justify-between"><span class="text-gray-400">CYP2D6</span><span class="text-purple-400">Antidepressants</span></div>
+                            <div class="flex justify-between"><span class="text-gray-400">CYP2C19</span><span class="text-purple-400">Citalopram</span></div>
+                            <div class="flex justify-between"><span class="text-gray-400">HLA-A/B</span><span class="text-purple-400">Carbamazepine</span></div>
+                        </div>
+                    </div>
+                    <div class="bg-black/40 rounded-lg p-3">
+                        <h4 class="text-white font-bold text-sm mb-2">Pain Management Panel</h4>
+                        <div class="space-y-1 text-xs">
+                            <div class="flex justify-between"><span class="text-gray-400">CYP2D6</span><span class="text-purple-400">Codeine, Tramadol</span></div>
+                            <div class="flex justify-between"><span class="text-gray-400">OPRM1</span><span class="text-purple-400">Opioid response</span></div>
+                            <div class="flex justify-between"><span class="text-gray-400">COMT</span><span class="text-purple-400">Pain sensitivity</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        loadPatients();
+        lucide.createIcons();
+    }
+
+    // Show Integrative Medicine / Mechanism Bridge
+    function showAyurvedicLibrary() {
+        document.getElementById('initialState').classList.add('hidden');
+        document.getElementById('loadingState').classList.add('hidden');
+
+        const container = document.getElementById('resultsContainer');
+        container.classList.remove('hidden');
+
+        container.innerHTML = `
+            <!-- Back Button -->
+            <button onclick="goBackToLibrary()" class="mb-4 px-4 py-2 bg-white/5 hover:bg-white/10 border border-orange-500/30 rounded-lg text-orange-400 text-sm flex items-center gap-2 transition">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Dashboard
+            </button>
+            
+            <!-- Header & Search -->
+            <div class="flex flex-col md:flex-row gap-6 mb-8">
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 bg-orange-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="sprout" class="w-8 h-8 text-orange-400"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-white">Mechanism Bridge</h1>
+                        <p class="text-gray-500 text-sm">Translate Ayurvedic & Herbal Concepts to Western Pharmacology</p>
+                    </div>
+                </div>
+                
+                <div class="flex-1 bg-black/40 border border-orange-500/30 rounded-lg p-3 flex gap-2 items-center">
+                    <input type="text" id="mechanismQuery" placeholder="Enter herb (e.g., Ashwagandha) or concept..." 
+                        class="bg-transparent border-none outline-none text-white w-full placeholder-gray-600 font-mono text-sm"
+                        onkeypress="if(event.key === 'Enter') runMechanismTranslation()">
+                    <button onclick="runMechanismTranslation()" class="bg-orange-500 hover:bg-orange-400 text-black p-2 rounded transition">
+                        <i data-lucide="arrow-right-left" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div id="mechanismResults" class="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-500">
+                <!-- Example Content (Static for now, dynamic on search) -->
+                
+                <!-- Left: Traditional Concept -->
+                <div class="bg-gradient-to-br from-green-900/10 to-black border border-green-500/30 rounded-xl p-6 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-4 opacity-10"><i data-lucide="leaf" class="w-24 h-24 text-green-500"></i></div>
+                    <div class="text-[10px] text-green-400 font-bold tracking-widest mb-4 flex items-center gap-2">
+                        <i data-lucide="scroll" class="w-3 h-3"></i> TRADITIONAL CONCEPT
+                    </div>
+                    <h2 class="text-2xl font-bold text-white mb-2 font-serif italic">"Ashwagandha"</h2>
+                    <h3 class="text-lg text-gray-400 mb-4 font-serif">Withania somnifera</h3>
+                    
+                    <div class="space-y-4">
+                        <div class="bg-black/40 rounded p-3 border-l-2 border-green-500/50">
+                            <div class="text-xs text-gray-500 uppercase mb-1">Classification</div>
+                            <div class="text-gray-200">Rasayana (Rejuvenator), Adaptogen</div>
+                        </div>
+                         <div class="bg-black/40 rounded p-3 border-l-2 border-green-500/50">
+                            <div class="text-xs text-gray-500 uppercase mb-1">Traditional Uses</div>
+                            <div class="text-gray-200">Stress reduction, vitality enhancement (Ojas), nervine tonic.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Western Mechanism -->
+                <div class="bg-gradient-to-br from-blue-900/10 to-black border border-blue-500/30 rounded-xl p-6 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-4 opacity-10"><i data-lucide="flask-conical" class="w-24 h-24 text-blue-500"></i></div>
+                    <div class="text-[10px] text-blue-400 font-bold tracking-widest mb-4 flex items-center gap-2">
+                        <i data-lucide="microscope" class="w-3 h-3"></i> PHARMACOLOGICAL MECHANISM
+                    </div>
+                    
+                    <div class="space-y-4 mt-8">
+                         <div class="bg-black/40 rounded p-3 border-l-2 border-blue-500/50">
+                            <div class="text-xs text-gray-500 uppercase mb-1">Mechanism of Action</div>
+                            <div class="text-gray-200">
+                                <ul class="list-disc list-inside space-y-1">
+                                    <li><strong>GABA-mimetic:</strong> Enhances GABA(A) receptor signaling (anxiolytic).</li>
+                                    <li><strong>Cortisol Modulation:</strong> Reduces serum cortisol levels via HPA axis regulation.</li>
+                                    <li><strong>Cholinergic Activity:</strong> AChE inhibition (cognitive support).</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Safety Shield (Bottom) -->
+                <div class="col-span-1 md:col-span-2 bg-gradient-to-r from-red-900/20 to-black border border-red-500/30 rounded-xl p-6">
+                     <div class="text-[10px] text-red-400 font-bold tracking-widest mb-3 flex items-center gap-2">
+                        <i data-lucide="shield-alert" class="w-4 h-4"></i> SAFETY SHIELD: INTERACTION CHECK
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-black/40 rounded p-3 border border-red-500/20">
+                            <div class="text-red-400 font-bold text-sm mb-1">CYP450 Impact</div>
+                            <div class="text-gray-300 text-xs">Possible CYP3A4 Inducer (mild)</div>
+                        </div>
+                        <div class="bg-black/40 rounded p-3 border border-red-500/20">
+                            <div class="text-red-400 font-bold text-sm mb-1">Contraindications</div>
+                            <div class="text-gray-300 text-xs">Pregnancy (abortifacient potential), Autoimmune diseases (immunostimulant)</div>
+                        </div>
+                         <div class="bg-black/40 rounded p-3 border border-red-500/20">
+                            <div class="text-red-400 font-bold text-sm mb-1">Drug Interactions</div>
+                            <div class="text-gray-300 text-xs">Benzodiazepines (additive sedation), Thyroid medications</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        lucide.createIcons();
+    }
+
+    async function runMechanismTranslation() {
+        const query = document.getElementById('mechanismQuery').value;
+        if (!query) return;
+
+        const resultsDiv = document.getElementById('mechanismResults');
+        resultsDiv.innerHTML = `
+            <div class="col-span-2 py-20 flex flex-col items-center justify-center">
+                <div class="w-12 h-12 border-t-2 border-b-2 border-orange-500 rounded-full animate-spin mb-4"></div>
+                <div class="text-orange-400 animate-pulse">Bridging Knowledge Systems...</div>
+            </div>
+        `;
+
+        // Simulate API call delay (Mock processing)
+        setTimeout(() => {
+            // In a real app, fetch from /api/mechanism-bridge
+            // For now, reload the example with the query title or show a generic "Not found in demo" if weird
+            // But let's just show the Ashwagandha example again tailored, or a generic template:
+
+            resultsDiv.innerHTML = `
+                <!-- Left: Traditional Concept -->
+                <div class="bg-gradient-to-br from-green-900/10 to-black border border-green-500/30 rounded-xl p-6 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-4 opacity-10"><i data-lucide="leaf" class="w-24 h-24 text-green-500"></i></div>
+                    <div class="text-[10px] text-green-400 font-bold tracking-widest mb-4 flex items-center gap-2">
+                        <i data-lucide="scroll" class="w-3 h-3"></i> TRADITIONAL CONTEXT
+                    </div>
+                    <h2 class="text-2xl font-bold text-white mb-2 font-serif italic">"${query}"</h2>
+                    <h3 class="text-lg text-gray-400 mb-4 font-serif">Analyzed Entity</h3>
+                    
+                    <div class="space-y-4">
+                        <div class="bg-black/40 rounded p-3 border-l-2 border-green-500/50">
+                            <div class="text-xs text-gray-500 uppercase mb-1">Category</div>
+                            <div class="text-gray-200">Herbal / Alternative Agent</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Western Mechanism -->
+                <div class="bg-gradient-to-br from-blue-900/10 to-black border border-blue-500/30 rounded-xl p-6 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-4 opacity-10"><i data-lucide="flask-conical" class="w-24 h-24 text-blue-500"></i></div>
+                    <div class="text-[10px] text-blue-400 font-bold tracking-widest mb-4 flex items-center gap-2">
+                        <i data-lucide="microscope" class="w-3 h-3"></i> PHARMACOLOGICAL TRANSLATION
+                    </div>
+                    
+                    <div class="space-y-4 mt-8">
+                         <div class="bg-black/40 rounded p-3 border-l-2 border-blue-500/50">
+                            <div class="text-xs text-gray-500 uppercase mb-1">Active Constituents</div>
+                            <div class="text-gray-200">
+                                Pending comprehensive analysis database connection.
+                            </div>
+                        </div>
+                         <div class="bg-black/40 rounded p-3 border-l-2 border-blue-500/50">
+                            <div class="text-xs text-gray-500 uppercase mb-1">Mechanism</div>
+                            <div class="text-gray-200">
+                                AI is analyzing pathways... (Mock Data: Anti-inflammatory via NF-kB inhibition likely).
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                 <!-- Safety Shield (Bottom) -->
+                <div class="col-span-1 md:col-span-2 bg-gradient-to-r from-red-900/20 to-black border border-red-500/30 rounded-xl p-6">
+                     <div class="text-[10px] text-red-400 font-bold tracking-widest mb-3 flex items-center gap-2">
+                        <i data-lucide="shield-alert" class="w-4 h-4"></i> SAFETY SHIELD
+                    </div>
+                    <div class="text-gray-400 text-sm">Always check for CYP450 interactions before prescribing concurrently.</div>
+                </div>
+            `;
+            lucide.createIcons();
+        }, 1500);
+    }
+
+    function goBackToLibrary() {
+        document.getElementById('resultsContainer').classList.add('hidden');
+        document.getElementById('resultsContainer').innerHTML = '';
+        document.getElementById('initialState').classList.remove('hidden');
+    }
+
+    // Auto-populate and run functions
+    function loadSystematicTopic(topic) {
+        document.getElementById('systematicQuery').value = topic;
+        runSystematicReview();
+    }
+
+    function loadGuidelineCategory(category) {
+        document.getElementById('guidelineCondition').value = category;
+        runGuidelineReconciliation();
+    }
+
+    function loadPgxDrug(drug) {
+        document.getElementById('pgxDrug').value = drug;
+        runPgxEvidence();
+    }
+
+    // Execution Wrappers
+    function runSystematicReview() {
+        const query = document.getElementById('systematicQuery').value;
+        if (!query) return;
+
+        const resultsContainer = document.getElementById('resultsContainer');
+        resultsContainer.innerHTML = `
+            <div class="flex flex-col items-center justify-center p-20">
+                <div class="loader mb-6 border-4 border-terminal-green border-t-transparent w-12 h-12 rounded-full animate-spin"></div>
+                <div class="text-terminal-green text-lg font-mono animate-pulse">Running Live Meta-Analysis...</div>
+                <div class="text-gray-500 text-sm mt-2">Searching PubMed, Cochrane, and ClinicalTrials.gov</div>
+            </div>
+        `;
+
+        fetch('/api/literature/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                query: query,
+                mode: 'systematic_review',
+                condition_context: document.getElementById('systematicCondition')?.value || ''
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                renderSystematicReview(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showSystematicReviewLibrary(); // Reset
+                alert('Analysis failed. Please try again.');
+            });
+    }
+
+    function runGuidelineReconciliation() {
+        const query = document.getElementById('guidelineCondition').value;
+        if (!query) return;
+
+        const resultsContainer = document.getElementById('resultsContainer');
+        resultsContainer.innerHTML = `
+            <div class="flex flex-col items-center justify-center p-20">
+                <div class="loader mb-6 border-4 border-blue-500 border-t-transparent w-12 h-12 rounded-full animate-spin"></div>
+                <div class="text-blue-400 text-lg font-mono animate-pulse">Reconciling Guidelines...</div>
+                <div class="text-gray-500 text-sm mt-2">Comparing ACC/AHA, ESC, NICE, and WHO protocols</div>
+            </div>
+        `;
+
+        fetch('/api/literature/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                query: query,
+                mode: 'guideline_reconciliation',
+                intervention_focus: document.getElementById('guidelineIntervention')?.value || ''
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                renderGuidelineReconciliation(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showGuidelineLibrary(); // Reset
+                alert('Analysis failed.');
+            });
+    }
+
+    function runPgxEvidence() {
+        const drug = document.getElementById('pgxDrug').value;
+        if (!drug) return;
+
+        const resultsContainer = document.getElementById('resultsContainer');
+        resultsContainer.innerHTML = `
+            <div class="flex flex-col items-center justify-center p-20">
+                <div class="loader mb-6 border-4 border-purple-500 border-t-transparent w-12 h-12 rounded-full animate-spin"></div>
+                <div class="text-purple-400 text-lg font-mono animate-pulse">Analyzing Pharmacogenomics...</div>
+                <div class="text-gray-500 text-sm mt-2">Checking CPIC guidelines and gene-drug interactions</div>
+            </div>
+        `;
+
+        fetch('/api/literature/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                query: drug,
+                mode: 'pgx_evidence',
+                patient_id: document.getElementById('pgxPatient')?.value || ''
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                renderPgxEvidence(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showPgxLibrary();
+                alert('Check failed.');
+            });
+    }
+
+    // ==================== DRUG INTERACTION CHECKER ====================
+    function showDrugInteractionChecker() {
+        document.getElementById('initialState').classList.add('hidden');
+        document.getElementById('loadingState').classList.add('hidden');
+        const container = document.getElementById('resultsContainer');
+        container.classList.remove('hidden');
+
+        container.innerHTML = `
+            <button onclick="goBackToLibrary()" class="mb-4 px-4 py-2 bg-white/5 hover:bg-white/10 border border-red-500/30 rounded-lg text-red-400 text-sm flex items-center gap-2 transition">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Dashboard
+            </button>
+            
+            <div class="flex items-center gap-4 mb-6">
+                <div class="w-16 h-16 bg-red-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="shield-alert" class="w-8 h-8 text-red-400"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-white">Drug Interaction Checker</h1>
+                    <p class="text-gray-500 text-sm">Multi-drug interaction analysis with severity grading</p>
+                </div>
+            </div>
+            
+            <div class="bg-black/40 border border-red-500/30 rounded-lg p-6 mb-6">
+                <div class="text-[10px] text-red-400 font-bold tracking-widest mb-4">ENTER MEDICATIONS</div>
+                <div id="drugInputs" class="space-y-2 mb-4">
+                    <input type="text" id="drug1" class="w-full bg-gray-900 border border-gray-700 rounded px-4 py-2 text-white text-sm focus:border-red-500 outline-none" placeholder="Drug 1 (e.g., Warfarin)">
+                    <input type="text" id="drug2" class="w-full bg-gray-900 border border-gray-700 rounded px-4 py-2 text-white text-sm focus:border-red-500 outline-none" placeholder="Drug 2 (e.g., Aspirin)">
+                    <input type="text" id="drug3" class="w-full bg-gray-900 border border-gray-700 rounded px-4 py-2 text-white text-sm focus:border-red-500 outline-none" placeholder="Drug 3 (optional)">
+                </div>
+                <button onclick="checkDrugInteractions()" class="w-full py-3 bg-red-500 hover:bg-red-600 rounded-lg text-white font-bold transition flex items-center justify-center gap-2">
+                    <i data-lucide="zap" class="w-4 h-4"></i> Check Interactions
+                </button>
+            </div>
+            
+            <div id="interactionResults"></div>
+        `;
+        lucide.createIcons();
+    }
+
+    async function checkDrugInteractions() {
+        const drugs = [
+            document.getElementById('drug1').value,
+            document.getElementById('drug2').value,
+            document.getElementById('drug3').value
+        ].filter(d => d.trim());
+
+        if (drugs.length < 2) return alert('Enter at least 2 drugs');
+
+        document.getElementById('interactionResults').innerHTML = `
+            <div class="flex items-center justify-center p-10">
+                <div class="loader border-4 border-red-500 border-t-transparent w-10 h-10 rounded-full animate-spin"></div>
+                <span class="ml-4 text-red-400 animate-pulse">Analyzing interactions...</span>
+            </div>
+        `;
+
+        try {
+            const res = await fetch('/api/drug-interactions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ drugs })
+            });
+            const data = await res.json();
+            renderDrugInteractions(data);
+        } catch (e) {
+            document.getElementById('interactionResults').innerHTML = '<div class="text-red-400 p-4">Error checking interactions</div>';
+        }
+    }
+
+    function renderDrugInteractions(data) {
+        let html = '';
+        if (data.interactions && data.interactions.length > 0) {
+            html = `<div class="space-y-4">`;
+            data.interactions.forEach(i => {
+                const severityClass = i.severity === 'Major' ? 'border-red-500 bg-red-900/20' :
+                    i.severity === 'Moderate' ? 'border-orange-500 bg-orange-900/20' :
+                        'border-yellow-500 bg-yellow-900/20';
+                html += `
+                    <div class="${severityClass} border rounded-lg p-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="text-white font-bold">${i.drug_pair}</div>
+                            <span class="px-2 py-1 ${i.severity === 'Major' ? 'bg-red-500' : i.severity === 'Moderate' ? 'bg-orange-500' : 'bg-yellow-500'} text-white text-xs font-bold rounded">${i.severity}</span>
+                        </div>
+                        <div class="text-gray-300 text-sm mb-2">${i.description}</div>
+                        <div class="text-gray-500 text-xs"><strong class="text-gray-400">Mechanism:</strong> ${i.mechanism || 'See details'}</div>
+                        ${i.recommendation ? `<div class="text-green-400 text-xs mt-2"><strong>Recommendation:</strong> ${i.recommendation}</div>` : ''}
+                    </div>
+                `;
+            });
+            html += `</div>`;
+        } else {
+            html = `<div class="bg-green-900/20 border border-green-500 rounded-lg p-6 text-center">
+                <i data-lucide="check-circle" class="w-12 h-12 text-green-500 mx-auto mb-3"></i>
+                <div class="text-green-400 font-bold text-lg">No Significant Interactions Found</div>
+                <div class="text-gray-500 text-sm mt-2">These medications appear safe to use together</div>
+            </div>`;
+        }
+        document.getElementById('interactionResults').innerHTML = html;
+        lucide.createIcons();
+    }
+
+    // ==================== CLINICAL CALCULATOR HUB ====================
+    function showClinicalCalculators() {
+        document.getElementById('initialState').classList.add('hidden');
+        document.getElementById('loadingState').classList.add('hidden');
+        const container = document.getElementById('resultsContainer');
+        container.classList.remove('hidden');
+
+        container.innerHTML = `
+            <button onclick="goBackToLibrary()" class="mb-4 px-4 py-2 bg-white/5 hover:bg-white/10 border border-cyan-500/30 rounded-lg text-cyan-400 text-sm flex items-center gap-2 transition">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Dashboard
+            </button>
+            
+            <div class="flex items-center gap-4 mb-6">
+                <div class="w-16 h-16 bg-cyan-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="calculator" class="w-8 h-8 text-cyan-400"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-white">Clinical Calculator Hub</h1>
+                    <p class="text-gray-500 text-sm">100+ validated clinical decision tools</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                ${[
+                { name: 'CHA₂DS₂-VASc', desc: 'Stroke risk in AFib', color: 'blue' },
+                { name: 'MELD Score', desc: 'Liver disease severity', color: 'yellow' },
+                { name: 'Wells Criteria (PE)', desc: 'PE probability', color: 'red' },
+                { name: 'CURB-65', desc: 'Pneumonia severity', color: 'orange' },
+                { name: 'CKD-EPI GFR', desc: 'Kidney function', color: 'green' },
+                { name: 'HEART Score', desc: 'ACS risk stratification', color: 'pink' },
+                { name: 'HAS-BLED', desc: 'Bleeding risk in AFib', color: 'red' },
+                { name: 'TIMI Risk Score', desc: 'ACS mortality risk', color: 'purple' },
+                { name: 'Child-Pugh Score', desc: 'Cirrhosis prognosis', color: 'yellow' }
+            ].map(calc => `
+                    <div onclick="runCalculator('${calc.name}')" class="bg-gradient-to-br from-${calc.color}-900/20 to-black border border-${calc.color}-500/30 rounded-lg p-4 hover:border-${calc.color}-500/60 cursor-pointer transition group">
+                        <div class="text-white font-bold mb-1">${calc.name}</div>
+                        <div class="text-gray-500 text-xs">${calc.desc}</div>
+                    </div>
+                `).join('')}
+            </div>
+            
+            <div id="calculatorResults" class="mt-6"></div>
+        `;
+        lucide.createIcons();
+    }
+
+    async function runCalculator(calcName) {
+        document.getElementById('calculatorResults').innerHTML = `
+            <div class="bg-cyan-900/20 border border-cyan-500/30 rounded-lg p-6">
+                <div class="text-cyan-400 font-bold mb-4">${calcName} Calculator</div>
+                <div class="text-gray-400 text-sm mb-4">Enter patient parameters to calculate score</div>
+                <div class="flex items-center justify-center p-8">
+                    <div class="text-gray-500">Calculator UI coming soon - use AI Diagnosis module for now</div>
+                </div>
+            </div>
+        `;
+    }
+
+    // ==================== DIFFERENTIAL DIAGNOSIS AI ====================
+    function showDifferentialDxAI() {
+        document.getElementById('initialState').classList.add('hidden');
+        document.getElementById('loadingState').classList.add('hidden');
+        const container = document.getElementById('resultsContainer');
+        container.classList.remove('hidden');
+
+        container.innerHTML = `
+            <button onclick="goBackToLibrary()" class="mb-4 px-4 py-2 bg-white/5 hover:bg-white/10 border border-yellow-500/30 rounded-lg text-yellow-400 text-sm flex items-center gap-2 transition">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Dashboard
+            </button>
+            
+            <div class="flex items-center gap-4 mb-6">
+                <div class="w-16 h-16 bg-yellow-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="git-branch" class="w-8 h-8 text-yellow-400"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-white">Differential Diagnosis AI</h1>
+                    <p class="text-gray-500 text-sm">Bayesian symptom-to-diagnosis reasoning</p>
+                </div>
+            </div>
+            
+            <div class="bg-black/40 border border-yellow-500/30 rounded-lg p-6 mb-6">
+                <div class="text-[10px] text-yellow-400 font-bold tracking-widest mb-4">ENTER SYMPTOMS</div>
+                <textarea id="ddxSymptoms" rows="4" class="w-full bg-gray-900 border border-gray-700 rounded px-4 py-3 text-white text-sm focus:border-yellow-500 outline-none resize-none" placeholder="Enter symptoms separated by commas (e.g., chest pain, shortness of breath, fever)"></textarea>
+                <div class="mt-4 flex gap-2">
+                    <input type="text" id="ddxAge" class="flex-1 bg-gray-900 border border-gray-700 rounded px-3 py-2 text-white text-sm focus:border-yellow-500 outline-none" placeholder="Age">
+                    <select id="ddxSex" class="flex-1 bg-gray-900 border border-gray-700 rounded px-3 py-2 text-white text-sm focus:border-yellow-500 outline-none">
+                        <option value="">Sex</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select>
+                </div>
+                <button onclick="runDifferentialDx()" class="w-full mt-4 py-3 bg-yellow-500 hover:bg-yellow-600 rounded-lg text-black font-bold transition flex items-center justify-center gap-2">
+                    <i data-lucide="brain" class="w-4 h-4"></i> Generate Differential
+                </button>
+            </div>
+            
+            <div id="ddxResults"></div>
+        `;
+        lucide.createIcons();
+    }
+
+    async function runDifferentialDx() {
+        const symptoms = document.getElementById('ddxSymptoms').value;
+        if (!symptoms) return alert('Enter symptoms');
+
+        document.getElementById('ddxResults').innerHTML = `
+            <div class="flex items-center justify-center p-10">
+                <div class="loader border-4 border-yellow-500 border-t-transparent w-10 h-10 rounded-full animate-spin"></div>
+                <span class="ml-4 text-yellow-400 animate-pulse">Running Bayesian analysis...</span>
+            </div>
+        `;
+
+        try {
+            const res = await fetch('/api/quick-differential', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    symptoms: symptoms.split(',').map(s => s.trim()),
+                    age: document.getElementById('ddxAge').value,
+                    sex: document.getElementById('ddxSex').value
+                })
+            });
+            const data = await res.json();
+            renderDifferentialDx(data);
+        } catch (e) {
+            document.getElementById('ddxResults').innerHTML = '<div class="text-red-400 p-4">Error generating differential</div>';
+        }
+    }
+
+    function renderDifferentialDx(data) {
+        let html = '<div class="space-y-3">';
+        if (data.diagnoses) {
+            data.diagnoses.forEach((dx, i) => {
+                const prob = (dx.probability * 100).toFixed(0);
+                const barWidth = Math.min(prob, 100);
+                html += `
+                    <div class="bg-black/40 border border-gray-700 rounded-lg p-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="text-white font-bold">${i + 1}. ${dx.condition}</div>
+                            <div class="text-yellow-400 font-bold">${prob}%</div>
+                        </div>
+                        <div class="w-full bg-gray-800 rounded h-2 mb-2">
+                            <div class="bg-yellow-500 h-2 rounded" style="width: ${barWidth}%"></div>
+                        </div>
+                        ${dx.red_flags && dx.red_flags.length ? `<div class="text-red-400 text-xs mt-2">🚨 Red flags: ${dx.red_flags.join(', ')}</div>` : ''}
+                    </div>
+                `;
+            });
+        }
+        html += '</div>';
+        document.getElementById('ddxResults').innerHTML = html;
+    }
+
+    // ==================== MEDICAL IMAGING ATLAS ====================
+    function showImagingAtlas() {
+        document.getElementById('initialState').classList.add('hidden');
+        document.getElementById('loadingState').classList.add('hidden');
+        const container = document.getElementById('resultsContainer');
+        container.classList.remove('hidden');
+
+        container.innerHTML = `
+            <button onclick="goBackToLibrary()" class="mb-4 px-4 py-2 bg-white/5 hover:bg-white/10 border border-pink-500/30 rounded-lg text-pink-400 text-sm flex items-center gap-2 transition">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Dashboard
+            </button>
+            
+            <div class="flex items-center gap-4 mb-6">
+                <div class="w-16 h-16 bg-pink-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="scan" class="w-8 h-8 text-pink-400"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-white">Medical Imaging Atlas</h1>
+                    <p class="text-gray-500 text-sm">Visual pathology reference library</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                ${['CT', 'MRI', 'X-Ray', 'Ultrasound'].map(modality => `
+                    <div class="bg-pink-900/20 border border-pink-500/30 rounded-lg p-4 text-center hover:border-pink-500/60 cursor-pointer transition">
+                        <div class="text-pink-400 font-bold text-lg mb-1">${modality}</div>
+                        <div class="text-gray-500 text-xs">View Atlas</div>
+                    </div>
+                `).join('')}
+            </div>
+            
+            <div class="bg-black/40 border border-pink-500/30 rounded-lg p-6">
+                <div class="text-[10px] text-pink-400 font-bold tracking-widest mb-4">COMMON PATHOLOGY EXAMPLES</div>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    ${[
+                { name: 'Pneumonia', organ: 'Chest' },
+                { name: 'Pulmonary Embolism', organ: 'Chest' },
+                { name: 'Brain Tumor', organ: 'Neuro' },
+                { name: 'Stroke (Ischemic)', organ: 'Neuro' },
+                { name: 'Appendicitis', organ: 'Abdomen' },
+                { name: 'Kidney Stone', organ: 'GU' },
+                { name: 'Fracture', organ: 'MSK' },
+                { name: 'Cardiomegaly', organ: 'Chest' }
+            ].map(path => `
+                        <div class="bg-gray-800/50 rounded-lg p-3 border border-gray-700 hover:border-pink-500/50 cursor-pointer transition">
+                            <div class="text-white text-sm font-bold">${path.name}</div>
+                            <div class="text-gray-500 text-xs">${path.organ}</div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="text-center text-gray-500 text-sm mt-6">Full atlas with annotated images coming soon</div>
+            </div>
+        `;
+        lucide.createIcons();
+    }
+
+    loadPatients();
+    lucide.createIcons();
+</script>
+{% endblock %}

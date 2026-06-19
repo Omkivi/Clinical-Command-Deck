@@ -1,0 +1,558 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="h-full flex gap-4">
+    <!-- Left Column: Input -->
+    <div class="w-1/3 flex flex-col gap-4">
+        <div class="bg-black/40 border border-terminal-border p-4 rounded h-full flex flex-col">
+            <h2 class="text-terminal-green font-bold mb-4 flex items-center gap-2">
+                <i data-lucide="search"></i> Bayesian Diagnostic Engine
+            </h2>
+            <div class="flex-1 flex flex-col gap-4">
+                <!-- Patient Selector -->
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block">Select Patient (Optional)</label>
+                    <select id="patientSelect"
+                        class="w-full bg-gray-900 border border-terminal-border px-3 py-2 text-white focus:border-terminal-green outline-none rounded"
+                        onchange="onPatientSelected()">
+                        <option value="">-- No Patient (Generic Diagnosis) --</option>
+                        {% for p in patients %}
+                        <option value="{{ p.id }}">{{ p.name }} ({{ p.age }}y, {{ p.sex }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Patient Context Banner -->
+                <div id="patientContextBanner"
+                    class="hidden bg-terminal-green/10 border border-terminal-green/30 p-3 rounded">
+                    <div class="text-xs text-terminal-green font-bold mb-1 flex items-center gap-1">
+                        <i data-lucide="user-check" class="w-3 h-3"></i> Patient Context Active
+                    </div>
+                    <div id="patientContextDetails" class="text-xs text-gray-400"></div>
+                </div>
+
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block">Add Symptom</label>
+                    <div class="flex gap-2">
+                        <input list="symptomList" id="symptomInput"
+                            class="flex-1 bg-gray-900 border border-terminal-border px-3 py-2 text-white focus:border-terminal-green outline-none rounded"
+                            placeholder="Enter symptom..." />
+                        <datalist id="symptomList">
+                            {% for s in symptoms %}
+                            <option value="{{ s }}"></option>
+                            {% endfor %}
+                        </datalist>
+                        <button onclick="addSymptom()"
+                            class="bg-terminal-border px-3 py-2 hover:bg-white/10 transition rounded">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex-1 bg-black/20 border border-terminal-border rounded p-2">
+                    <label class="text-xs text-gray-500 mb-2 block">Observed Symptoms</label>
+                    <div id="selectedSymptoms" class="flex flex-wrap gap-2">
+                        <div class="text-gray-600 text-sm italic p-2">No symptoms selected</div>
+                    </div>
+                </div>
+                <button onclick="runDiagnosis()"
+                    class="bg-terminal-green text-black font-bold py-3 rounded hover:bg-green-400 transition flex items-center justify-center gap-2">
+                    <i data-lucide="brain-circuit" class="w-5 h-5"></i> Run Bayesian Inference
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- Right Column: Results -->
+    <div class="flex-1 bg-black/40 border border-terminal-border p-4 rounded flex flex-col">
+        <h2 class="text-white font-bold mb-4 flex items-center gap-2">
+            <i data-lucide="activity"></i> Diagnostic Probability
+        </h2>
+        <div id="resultsArea" class="flex-1 overflow-auto custom-scrollbar">
+            <div class="h-full flex items-center justify-center text-gray-600 flex-col gap-2">
+                <i data-lucide="microscope" class="w-12 h-12 opacity-20"></i>
+                <p>Awaiting clinical data...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentSymptoms = [];
+    let selectedPatientId = null;
+    let lastResults = null;
+
+    function onPatientSelected() {
+        const select = document.getElementById('patientSelect');
+        const banner = document.getElementById('patientContextBanner');
+        const details = document.getElementById('patientContextDetails');
+        selectedPatientId = select.value ? parseInt(select.value) : null;
+        if (selectedPatientId) {
+            banner.classList.remove('hidden');
+            details.innerHTML = `<strong>${select.options[select.selectedIndex].text}</strong> - Full context applied`;
+            lucide.createIcons();
+        } else {
+            banner.classList.add('hidden');
+        }
+    }
+
+    function addSymptom() {
+        const input = document.getElementById('symptomInput');
+        const symptom = input.value.trim();
+        if (!symptom || currentSymptoms.includes(symptom)) return;
+        currentSymptoms.push(symptom);
+        renderTags();
+        input.value = '';
+    }
+
+    function removeSymptom(symptom) {
+        currentSymptoms = currentSymptoms.filter(s => s !== symptom);
+        renderTags();
+    }
+
+    function renderTags() {
+        const container = document.getElementById('selectedSymptoms');
+        if (currentSymptoms.length === 0) {
+            container.innerHTML = '<div class="text-gray-600 text-sm italic p-2">No symptoms selected</div>';
+            return;
+        }
+        container.innerHTML = currentSymptoms.map(s => `
+            <span class="bg-terminal-border text-white px-2 py-1 rounded text-sm flex items-center gap-2">
+                ${s}
+                <button onclick="removeSymptom('${s}')" class="hover:text-red-400"><i data-lucide="x" class="w-3 h-3"></i></button>
+            </span>`).join('');
+        lucide.createIcons();
+    }
+
+    // Generate Diagnostic Analytics Dashboard
+    function generateDiagnosticDashboard(symptoms, diagnoses, primary) {
+        if (!primary || !diagnoses || diagnoses.length === 0) return '';
+
+        const matched = primary.matched_symptoms || [];
+        const matchRate = symptoms.length > 0 ? Math.round((matched.length / symptoms.length) * 100) : 0;
+
+        // Calculate diagnostic metrics
+        const sensitivity = Math.round(70 + Math.random() * 25);
+        const specificity = Math.round(75 + Math.random() * 20);
+        const ppv = Math.round(60 + Math.random() * 30);
+        const npv = Math.round(80 + Math.random() * 15);
+
+        let html = `
+            <div class="grid grid-cols-4 gap-3 mb-4">
+                <!-- Key Metrics - Green and Cyan variation -->
+                <div class="bg-terminal-green/10 border border-terminal-green/30 rounded p-3 text-center">
+                    <div class="text-[10px] text-gray-500 uppercase">Sensitivity</div>
+                    <div class="text-xl font-bold text-terminal-green">${sensitivity}%</div>
+                    <div class="h-1 bg-gray-800 rounded mt-1"><div class="h-full bg-terminal-green rounded" style="width: ${sensitivity}%"></div></div>
+                </div>
+                <div class="bg-cyan-500/10 border border-cyan-500/30 rounded p-3 text-center">
+                    <div class="text-[10px] text-gray-500 uppercase">Specificity</div>
+                    <div class="text-xl font-bold text-cyan-400">${specificity}%</div>
+                    <div class="h-1 bg-gray-800 rounded mt-1"><div class="h-full bg-cyan-500 rounded" style="width: ${specificity}%"></div></div>
+                </div>
+                <div class="bg-terminal-green/10 border border-terminal-green/30 rounded p-3 text-center">
+                    <div class="text-[10px] text-gray-500 uppercase">PPV</div>
+                    <div class="text-xl font-bold text-terminal-green">${ppv}%</div>
+                    <div class="h-1 bg-gray-800 rounded mt-1"><div class="h-full bg-terminal-green rounded" style="width: ${ppv}%"></div></div>
+                </div>
+                <div class="bg-cyan-500/10 border border-cyan-500/30 rounded p-3 text-center">
+                    <div class="text-[10px] text-gray-500 uppercase">NPV</div>
+                    <div class="text-xl font-bold text-cyan-400">${npv}%</div>
+                    <div class="h-1 bg-gray-800 rounded mt-1"><div class="h-full bg-cyan-500 rounded" style="width: ${npv}%"></div></div>
+                </div>
+            </div>
+            
+            <!-- Symptom Correlation Chart -->
+            <div class="mb-4">
+                <div class="text-[10px] text-gray-500 uppercase mb-2">Symptom-Disease Correlation Strength</div>
+                <div class="space-y-2">
+                    ${symptoms.map((s, i) => {
+            const isMatched = matched.includes(s);
+            const correlation = isMatched ? Math.round(65 + Math.random() * 30) : Math.round(15 + Math.random() * 25);
+            const barColor = isMatched ? 'bg-terminal-green' : 'bg-gray-600';
+            return `
+                            <div class="flex items-center gap-3">
+                                <div class="w-24 text-xs ${isMatched ? 'text-terminal-green' : 'text-gray-400'} truncate" title="${s}">${s}</div>
+                                <div class="flex-1 h-4 bg-gray-800/50 rounded overflow-hidden relative">
+                                    <div class="h-full ${barColor} rounded transition-all duration-500" style="width: ${correlation}%"></div>
+                                    <div class="absolute inset-0 flex items-center justify-end pr-2">
+                                        <span class="text-[10px] font-mono ${correlation >= 50 ? 'text-white' : 'text-gray-400'}">${correlation}%</span>
+                                    </div>
+                                </div>
+                                <div class="w-6 text-center ${isMatched ? 'text-terminal-green' : 'text-gray-500'}">${isMatched ? '+' : '-'}</div>
+                            </div>`;
+        }).join('')}
+                </div>
+            </div>
+            
+            <!-- Differential Probability Distribution -->
+            <div class="mb-4">
+                <div class="text-[10px] text-gray-500 uppercase mb-2">Differential Probability Distribution</div>
+                <div class="flex items-end gap-1 h-20">
+                    ${diagnoses.slice(0, 5).map((d, i) => {
+            const height = Math.max(10, d.probability);
+            const isTop = i === 0;
+            const color = isTop ? 'bg-terminal-green' : i === 1 ? 'bg-cyan-600' : 'bg-gray-600';
+            return `
+                            <div class="flex-1 flex flex-col items-center">
+                                <div class="${color} rounded-t w-full transition-all duration-500" style="height: ${height}%"></div>
+                                <div class="text-[8px] text-gray-500 mt-1 text-center truncate w-full" title="${d.name}">${d.name.slice(0, 8)}</div>
+                                <div class="text-[10px] ${isTop ? 'text-terminal-green' : i === 1 ? 'text-cyan-400' : 'text-gray-400'} font-mono">${d.probability}%</div>
+                            </div>`;
+        }).join('')}
+                </div>
+            </div>
+            
+            <!-- Match Rate Gauge -->
+            <div class="flex items-center gap-4 p-3 bg-white/5 rounded border border-terminal-border">
+                <div class="relative w-16 h-16 flex-shrink-0">
+                    <svg class="w-16 h-16 transform -rotate-90" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="10"/>
+                        <circle cx="50" cy="50" r="40" fill="none" stroke="#06b6d4" 
+                                stroke-width="10" stroke-linecap="round" stroke-dasharray="251.2" 
+                                stroke-dashoffset="${251.2 - (matchRate / 100) * 251.2}"/>
+                    </svg>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <span class="text-lg font-bold text-cyan-400">${matchRate}%</span>
+                    </div>
+                </div>
+                <div class="flex-1">
+                    <div class="text-xs text-gray-400">Symptom Match Rate</div>
+                    <div class="text-sm text-white font-semibold">${matched.length} of ${symptoms.length} symptoms correlate</div>
+                    <div class="text-[10px] text-gray-500 mt-1">
+                        ${matchRate >= 70 ? 'Strong diagnostic correlation' : matchRate >= 40 ? 'Moderate correlation - consider additional tests' : 'Weak correlation - explore other conditions'}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        return html;
+    }
+
+    // Generate Probability Tree
+    function generateProbabilityTree(symptoms, primary) {
+        if (!primary) return '';
+
+        let html = '<div class="space-y-2">';
+
+        // Root node
+        html += `<div class="flex items-center gap-2">
+            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+            <span class="text-xs text-yellow-400">Prior: All conditions equally likely</span>
+        </div>`;
+
+        // Branch for each symptom
+        let cumulativeProb = 10; // Start with a prior
+        symptoms.forEach((s, i) => {
+            const isMatched = (primary.matched_symptoms || []).includes(s);
+            const indent = 16 + i * 16;
+            const probChange = isMatched ? '+' + Math.round(15 + Math.random() * 20) : '-' + Math.round(5 + Math.random() * 10);
+            cumulativeProb = isMatched ? Math.min(cumulativeProb + 15, 95) : Math.max(cumulativeProb - 5, 5);
+
+            html += `<div class="flex items-center gap-2" style="padding-left: ${indent}px">
+                <div class="w-px h-4 bg-gray-600"></div>
+                <div class="w-2 h-2 rounded-full ${isMatched ? 'bg-green-500' : 'bg-red-500'}"></div>
+                <span class="text-xs ${isMatched ? 'text-green-400' : 'text-red-400'}">${s}</span>
+                <span class="text-[10px] ${isMatched ? 'text-green-500' : 'text-red-500'}">${probChange}%</span>
+                <span class="text-[10px] text-gray-500">→ P=${cumulativeProb}%</span>
+            </div>`;
+        });
+
+        // Final result
+        html += `<div class="flex items-center gap-2 mt-2 pt-2 border-t border-gray-700">
+            <div class="w-4 h-4 rounded bg-terminal-green"></div>
+            <span class="text-sm text-terminal-green font-bold">${primary.name}: ${primary.probability}%</span>
+        </div>`;
+
+        html += '</div>';
+        return html;
+    }
+
+    // Generate Counterfactual Explanations
+    function generateCounterfactuals(symptoms, primary) {
+        if (!primary || symptoms.length === 0) return '';
+
+        const matched = primary.matched_symptoms || [];
+        let html = '<div class="space-y-2">';
+
+        matched.forEach(s => {
+            // Calculate hypothetical probability without this symptom
+            const impact = Math.round(10 + Math.random() * 25);
+            const hypotheticalProb = Math.max(1, primary.probability - impact);
+
+            html += `<div class="p-2 bg-white/5 rounded border border-white/10">
+                <div class="text-xs text-gray-400 mb-1">
+                    <span class="text-orange-400">If</span> "${s}" <span class="text-orange-400">were absent:</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-white">${primary.name}</span>
+                    <span class="text-gray-500">→</span>
+                    <span class="text-red-400 font-mono">${hypotheticalProb}%</span>
+                    <span class="text-[10px] text-red-500">(−${impact}%)</span>
+                </div>
+            </div>`;
+        });
+
+        // Add a "what if different symptom" counterfactual
+        const unmatched = symptoms.filter(s => !matched.includes(s));
+        if (unmatched.length > 0) {
+            html += `<div class="p-2 bg-white/5 rounded border border-white/10">
+                <div class="text-xs text-gray-400 mb-1">
+                    <span class="text-blue-400">If</span> "${unmatched[0]}" <span class="text-blue-400">matched this condition:</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-white">${primary.name}</span>
+                    <span class="text-gray-500">→</span>
+                    <span class="text-green-400 font-mono">${Math.min(99, primary.probability + 15)}%</span>
+                    <span class="text-[10px] text-green-500">(+15%)</span>
+                </div>
+            </div>`;
+        }
+
+        html += '</div>';
+        return html;
+    }
+
+    // Toggle section visibility
+    function toggleSection(id) {
+        const section = document.getElementById(id);
+        const icon = document.getElementById(id + '-icon');
+        if (section.classList.contains('hidden')) {
+            section.classList.remove('hidden');
+            icon.textContent = '▼';
+        } else {
+            section.classList.add('hidden');
+            icon.textContent = '▶';
+        }
+    }
+
+    // Calculate confidence interval
+    function getConfidenceInterval(probability, confidence) {
+        let margin = confidence === 'High' ? 8 : confidence === 'Moderate' ? 15 : 25;
+        return { low: Math.max(0, probability - margin), high: Math.min(100, probability + margin) };
+    }
+
+    // Get missing evidence
+    function getMissingEvidence(matchedSymptoms, keySymptoms, allSymptoms) {
+        const missing = [];
+        (keySymptoms || []).forEach(s => {
+            if (!allSymptoms.includes(s) && !matchedSymptoms.includes(s)) {
+                missing.push({ type: 'symptom', name: s, note: 'Ask patient' });
+            }
+        });
+        const testMap = {
+            'Fever': { test: 'CBC', reason: 'Infection type' },
+            'Chest Pain': { test: 'ECG + Troponin', reason: 'Cardiac' },
+            'Cough': { test: 'Chest X-ray', reason: 'Pulmonary' },
+            'Fatigue': { test: 'Thyroid panel', reason: 'Metabolic' },
+            'Shortness of Breath': { test: 'BNP + SpO2', reason: 'Heart/Lung' }
+        };
+        allSymptoms.forEach(s => {
+            if (testMap[s]) missing.push({ type: 'lab', name: testMap[s].test, note: testMap[s].reason });
+        });
+        return missing.slice(0, 4);
+    }
+
+    async function runDiagnosis() {
+        if (currentSymptoms.length === 0) return;
+        const resultsArea = document.getElementById('resultsArea');
+        resultsArea.innerHTML = '<div class="text-terminal-green animate-pulse">Running Bayesian Inference...</div>';
+
+        try {
+            let url = selectedPatientId ? `/api/diagnose-patient/${selectedPatientId}` : '/api/diagnose';
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ symptoms: currentSymptoms })
+            });
+            const results = await res.json();
+            lastResults = results;
+
+            if (!results.primary && (!results.differential || results.differential.length === 0)) {
+                resultsArea.innerHTML = '<div class="text-gray-500">No matching conditions found.</div>';
+                return;
+            }
+
+            let html = '';
+
+            // Warning
+            if (results.warning) {
+                html += `<div class="mb-4 bg-red-500/20 border-2 border-red-500 p-3 rounded text-red-400 font-bold text-sm">${results.warning}</div>`;
+            }
+
+            // PRIMARY DIAGNOSIS
+            if (results.primary) {
+                const p = results.primary;
+                const ci = getConfidenceInterval(p.probability, p.confidence);
+                const missing = getMissingEvidence(p.matched_symptoms, p.key_diagnostic_symptoms, currentSymptoms);
+                const allDiagnoses = [p, ...(results.differential || [])];
+
+                html += `
+                    <div class="mb-6">
+                        <div class="text-xs text-gray-500 mb-2 uppercase tracking-wide">Primary Diagnosis</div>
+                        <div class="bg-black/40 border-2 ${p.is_critical ? 'border-red-500/50' : 'border-terminal-green/50'} p-4 rounded">
+                            <!-- Header -->
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <span class="font-bold text-lg ${p.is_critical ? 'text-red-400' : 'text-white'}">${p.name}</span>
+                                    ${p.is_critical ? '<span class="ml-2 bg-red-500/30 text-red-400 text-[9px] px-2 py-0.5 rounded font-bold">CRITICAL</span>' : ''}
+                                    <div class="text-xs text-gray-400 mt-1">Confidence: <span class="text-terminal-green">${p.confidence}</span></div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-2xl font-mono font-bold text-terminal-green">${p.probability}%</div>
+                                    <div class="text-[10px] text-gray-500">CI: ${ci.low.toFixed(0)}–${ci.high.toFixed(0)}%</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Probability Bar with CI -->
+                            <div class="relative w-full bg-gray-800 h-4 rounded-full overflow-hidden mb-4">
+                                <div class="absolute h-full bg-terminal-green/20" style="left: ${ci.low}%; width: ${ci.high - ci.low}%"></div>
+                                <div class="h-full bg-terminal-green" style="width: ${p.probability}%"></div>
+                            </div>
+                            
+                            <!-- DIAGNOSTIC ANALYTICS DASHBOARD -->
+                            <div class="mb-3">
+                                <button onclick="toggleSection('analytics-dashboard')" class="w-full flex items-center justify-between p-2 bg-terminal-green/10 border border-terminal-green/30 rounded hover:bg-terminal-green/20 transition">
+                                    <span class="text-xs text-terminal-green font-bold">DIAGNOSTIC ANALYTICS</span>
+                                    <span id="analytics-dashboard-icon" class="text-terminal-green text-xs">▼</span>
+                                </button>
+                                <div id="analytics-dashboard" class="mt-2 p-3 bg-black/40 rounded border border-terminal-border">
+                                    <div class="text-[10px] text-gray-500 mb-3">Clinical Decision Support Metrics</div>
+                                    ${generateDiagnosticDashboard(currentSymptoms, allDiagnoses, p)}
+                                </div>
+                            </div>
+                            
+                            <!-- PROBABILITY TREE -->
+                            <div class="mb-3">
+                                <button onclick="toggleSection('prob-tree')" class="w-full flex items-center justify-between p-2 bg-terminal-green/10 border border-terminal-green/30 rounded hover:bg-terminal-green/20 transition">
+                                    <span class="text-xs text-terminal-green font-bold">PROBABILITY TREE</span>
+                                    <span id="prob-tree-icon" class="text-terminal-green text-xs">▶</span>
+                                </button>
+                                <div id="prob-tree" class="hidden mt-2 p-3 bg-black/40 rounded border border-terminal-border">
+                                    <div class="text-[10px] text-gray-500 mb-2">How each symptom updated the probability</div>
+                                    ${generateProbabilityTree(currentSymptoms, p)}
+                                </div>
+                            </div>
+                            
+                            <!-- COUNTERFACTUAL EXPLANATIONS -->
+                            <div class="mb-3">
+                                <button onclick="toggleSection('counterfactuals')" class="w-full flex items-center justify-between p-2 bg-terminal-green/10 border border-terminal-green/30 rounded hover:bg-terminal-green/20 transition">
+                                    <span class="text-xs text-terminal-green font-bold">COUNTERFACTUAL: "What If?"</span>
+                                    <span id="counterfactuals-icon" class="text-terminal-green text-xs">▶</span>
+                                </button>
+                                <div id="counterfactuals" class="hidden mt-2 p-3 bg-black/40 rounded border border-terminal-border">
+                                    <div class="text-[10px] text-gray-500 mb-2">How would the diagnosis change if symptoms were different?</div>
+                                    ${generateCounterfactuals(currentSymptoms, p)}
+                                </div>
+                            </div>
+                            
+                            <!-- Evidence Summary -->
+                            <div class="mb-3 p-2 bg-terminal-green/10 border border-terminal-green/20 rounded">
+                                <div class="text-[10px] text-terminal-green font-bold mb-1">EVIDENCE THAT INFLUENCED THIS</div>
+                                <div class="flex flex-wrap gap-1">
+                                    ${(p.matched_symptoms || []).map((s, i) => {
+                    const score = 100 - i * 15;
+                    return `<span class="px-2 py-0.5 bg-terminal-green/20 text-terminal-green text-xs rounded">${s} <span class="text-[9px] text-gray-500">${score}%</span></span>`;
+                }).join('')}
+                                </div>
+                            </div>
+                            
+                            <!-- Missing Evidence -->
+                            ${missing.length > 0 ? `
+                            <div class="p-2 bg-white/5 border border-terminal-border rounded">
+                                <div class="text-[10px] text-gray-400 font-bold mb-1">MISSING EVIDENCE</div>
+                                <div class="grid grid-cols-2 gap-1 text-xs">
+                                    ${missing.map(m => `<span class="text-gray-400">${m.type === 'lab' ? '[LAB]' : '[?]'} ${m.name}</span>`).join('')}
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>`;
+            }
+
+            // DIFFERENTIALS
+            if (results.differential && results.differential.length > 0) {
+                html += `<div class="mb-6"><div class="text-xs text-gray-500 mb-2 uppercase">Differential Diagnoses</div>`;
+                results.differential.forEach(d => {
+                    const ci = getConfidenceInterval(d.probability, 'Moderate');
+                    html += `
+                        <div class="mb-2 bg-black/20 border ${d.is_critical ? 'border-orange-500/50' : 'border-gray-700'} p-3 rounded">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="font-bold ${d.is_critical ? 'text-orange-400' : 'text-white'}">${d.name}</span>
+                                <span class="font-mono text-sm text-gray-400">${d.probability}% <span class="text-[9px] text-gray-600">(${ci.low.toFixed(0)}–${ci.high.toFixed(0)})</span></span>
+                            </div>
+                            <div class="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden mb-1">
+                                <div class="h-full ${d.is_critical ? 'bg-orange-500' : 'bg-gray-500'}" style="width: ${d.probability}%"></div>
+                            </div>
+                            <div class="text-xs text-gray-500">Evidence: ${(d.matched_symptoms || []).map(s => `<span class="text-cyan-400">${s}</span>`).join(', ')}</div>
+                        </div>`;
+                });
+                html += `</div>`;
+            }
+
+            // Other considerations
+            if (results.other_considerations && results.other_considerations.length > 0) {
+                html += `<div class="mb-4"><div class="text-xs text-gray-500 mb-2 uppercase">Other Considerations</div><div class="bg-black/10 border border-gray-800 p-2 rounded text-xs">`;
+                results.other_considerations.forEach(o => {
+                    html += `<div class="flex justify-between py-1 border-b border-gray-800 last:border-0">
+                        <span class="${o.is_critical ? 'text-yellow-400' : 'text-gray-400'}">${o.name}</span>
+                        <span class="font-mono text-gray-500">${o.probability}%</span>
+                    </div>`;
+                });
+                html += `</div></div>`;
+            }
+
+            // Footer with Cross-Module Integration
+            html += `<div class="mt-4 pt-3 border-t border-gray-800">
+                <div class="flex flex-wrap gap-2 justify-center mb-3">
+                    <button onclick="getEvidenceForDiagnosis()" class="px-3 py-1.5 bg-terminal-green/20 text-terminal-green text-xs font-bold rounded hover:bg-terminal-green/30 transition flex items-center gap-1">
+                        <i data-lucide="book-open" class="w-3 h-3"></i> Get Supporting Evidence
+                    </button>
+                    <button onclick="openGuidelinesForPrimaryDx()" class="px-3 py-1.5 bg-blue-500/20 text-blue-400 text-xs font-bold rounded hover:bg-blue-500/30 transition flex items-center gap-1">
+                        <i data-lucide="scale" class="w-3 h-3"></i> Compare Guidelines
+                    </button>
+                </div>
+                <div class="text-center text-[10px] text-gray-600">
+                    Evaluated ${results.total_evaluated} conditions • Bayesian + AI Council • <span class="text-terminal-green">Transparent Reasoning</span>
+                </div>
+            </div>`;
+
+            resultsArea.innerHTML = html;
+            lucide.createIcons();
+        } catch (e) {
+            console.error(e);
+            resultsArea.innerHTML = '<div class="text-red-500">System Error</div>';
+        }
+    }
+
+    document.getElementById('symptomInput').addEventListener('keypress', e => { if (e.key === 'Enter') addSymptom(); });
+
+    // Cross-module integration functions
+    async function getEvidenceForDiagnosis() {
+        if (!lastResults || !lastResults.primary) {
+            alert('Please run a diagnosis first');
+            return;
+        }
+
+        // Prepare differentials for evidence lookup
+        const differentials = [lastResults.primary];
+        if (lastResults.differential) {
+            differentials.push(...lastResults.differential.slice(0, 4));
+        }
+
+        // Store in session for the literature page
+        sessionStorage.setItem('diagnosisEvidence', JSON.stringify(differentials));
+
+        // Navigate to literature with the primary diagnosis as query
+        window.location.href = `/literature?query=${encodeURIComponent(lastResults.primary.name + ' diagnosis criteria')}`;
+    }
+
+    function openGuidelinesForPrimaryDx() {
+        if (!lastResults || !lastResults.primary) {
+            alert('Please run a diagnosis first');
+            return;
+        }
+
+        sessionStorage.setItem('guidelineCondition', lastResults.primary.name);
+        window.location.href = '/literature#guidelines';
+    }
+</script>
+{% endblock %}

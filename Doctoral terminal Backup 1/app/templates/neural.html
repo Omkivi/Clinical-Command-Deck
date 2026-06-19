@@ -1,0 +1,412 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="h-full flex flex-col gap-4">
+    <!-- Header -->
+    <div class="flex justify-between items-center bg-black/40 p-4 border border-terminal-border rounded">
+        <div>
+            <h1 class="text-2xl font-bold text-terminal-green tracking-wider flex items-center gap-2">
+                <i data-lucide="brain-circuit"></i> NEURAL INTERFACE
+            </h1>
+            <p class="text-xs text-gray-500">BRAIN-COMPUTER INTERFACE TELEMETRY & DIAGNOSTICS</p>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <!-- Patient Selector -->
+            <select id="neural-patient-select"
+                class="bg-black border border-terminal-border text-terminal-green px-3 py-1 rounded text-sm focus:outline-none focus:border-terminal-green">
+                <option value="">-- Connect to Subject --</option>
+                {% for patient in patients %}
+                <option value="{{ patient.id }}">{{ patient.name }} (ID: {{ patient.id }})</option>
+                {% endfor %}
+            </select>
+
+            <div class="flex items-center gap-2 px-3 py-1 bg-black border border-terminal-border rounded">
+                <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse" id="connection-status-dot"></div>
+                <span class="text-xs font-mono" id="connection-status-text">DISCONNECTED</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Grid -->
+    <div class="flex-1 grid grid-cols-12 gap-4 min-h-0">
+
+        <!-- Left Column: EEG Stream (8 cols) -->
+        <div class="col-span-8 flex flex-col gap-4">
+            <!-- Signal Viewer -->
+            <div
+                class="flex-1 bg-black/40 border border-terminal-border rounded p-4 flex flex-col relative overflow-hidden group">
+                <div class="absolute top-2 right-2 text-xs text-gray-500 flex gap-2">
+                    <span>SAMPLING: <span class="text-white">0 Hz</span></span>
+                    <span>GAIN: <span class="text-white">1x</span></span>
+                </div>
+                <h3 class="text-sm font-bold text-gray-400 mb-2 flex items-center gap-2">
+                    <i data-lucide="activity"></i> LIVE EEG TELEMETRY
+                </h3>
+
+                <!-- Canvas for live data -->
+                <canvas id="eeg-canvas"
+                    class="flex-1 w-full h-full border border-terminal-border/30 bg-black/50 rounded"></canvas>
+
+                <!-- Overlay for disconnected state -->
+                <div id="eeg-overlay" class="absolute inset-0 flex items-center justify-center bg-black/80 z-10">
+                    <div class="text-center">
+                        <i data-lucide="wifi-off" class="w-12 h-12 text-gray-600 mx-auto mb-2"></i>
+                        <p class="text-gray-500">NO SIGNAL ACQUIRED</p>
+                        <p class="text-xs text-gray-700 mt-1">Select a subject to initialize neural link</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Frequency Analysis (FFT) -->
+            <div class="h-48 bg-black/40 border border-terminal-border rounded p-4 grid grid-cols-5 gap-2">
+                <!-- Alpha -->
+                <div class="flex flex-col justify-end items-center gap-2">
+                    <div class="w-full bg-gray-900 rounded-t h-full relative overflow-hidden">
+                        <div id="bar-alpha" class="absolute bottom-0 w-full bg-blue-500/50 transition-all duration-200"
+                            style="height: 0%"></div>
+                    </div>
+                    <span class="text-xs font-mono text-blue-400">ALPHA</span>
+                </div>
+                <!-- Beta -->
+                <div class="flex flex-col justify-end items-center gap-2">
+                    <div class="w-full bg-gray-900 rounded-t h-full relative overflow-hidden">
+                        <div id="bar-beta" class="absolute bottom-0 w-full bg-green-500/50 transition-all duration-200"
+                            style="height: 0%"></div>
+                    </div>
+                    <span class="text-xs font-mono text-green-400">BETA</span>
+                </div>
+                <!-- Delta -->
+                <div class="flex flex-col justify-end items-center gap-2">
+                    <div class="w-full bg-gray-900 rounded-t h-full relative overflow-hidden">
+                        <div id="bar-delta"
+                            class="absolute bottom-0 w-full bg-yellow-500/50 transition-all duration-200"
+                            style="height: 0%"></div>
+                    </div>
+                    <span class="text-xs font-mono text-yellow-400">DELTA</span>
+                </div>
+                <!-- Theta -->
+                <div class="flex flex-col justify-end items-center gap-2">
+                    <div class="w-full bg-gray-900 rounded-t h-full relative overflow-hidden">
+                        <div id="bar-theta"
+                            class="absolute bottom-0 w-full bg-purple-500/50 transition-all duration-200"
+                            style="height: 0%"></div>
+                    </div>
+                    <span class="text-xs font-mono text-purple-400">THETA</span>
+                </div>
+                <!-- Gamma -->
+                <div class="flex flex-col justify-end items-center gap-2">
+                    <div class="w-full bg-gray-900 rounded-t h-full relative overflow-hidden">
+                        <div id="bar-gamma" class="absolute bottom-0 w-full bg-red-500/50 transition-all duration-200"
+                            style="height: 0%"></div>
+                    </div>
+                    <span class="text-xs font-mono text-red-400">GAMMA</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Diagnostics & AI (4 cols) -->
+        <div class="col-span-4 flex flex-col gap-4">
+
+            <!-- Implant Status -->
+            <div class="bg-black/40 border border-terminal-border rounded p-4">
+                <h3 class="text-sm font-bold text-gray-400 mb-4 flex items-center gap-2">
+                    <i data-lucide="cpu"></i> IMPLANT STATUS
+                </h3>
+
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="bg-black/50 p-2 rounded border border-terminal-border">
+                            <div class="text-[10px] text-gray-500">BATTERY</div>
+                            <div class="text-xl font-bold text-green-400" id="metric-battery">--%</div>
+                        </div>
+                        <div class="bg-black/50 p-2 rounded border border-terminal-border">
+                            <div class="text-[10px] text-gray-500">TEMP</div>
+                            <div class="text-xl font-bold text-white" id="metric-temp">--°C</div>
+                        </div>
+                        <div class="bg-black/50 p-2 rounded border border-terminal-border">
+                            <div class="text-[10px] text-gray-500">IMPEDANCE</div>
+                            <div class="text-xl font-bold text-blue-400" id="metric-impedance">-- kΩ</div>
+                        </div>
+                        <div class="bg-black/50 p-2 rounded border border-terminal-border">
+                            <div class="text-[10px] text-gray-500">LATENCY</div>
+                            <div class="text-xl font-bold text-yellow-400" id="metric-latency">-- ms</div>
+                        </div>
+                    </div>
+
+                    <!-- Electrode Grid Visual -->
+                    <div class="aspect-square bg-black border border-terminal-border rounded relative p-2 grid grid-cols-8 grid-rows-8 gap-1"
+                        id="electrode-grid">
+                        <!-- JS creates 64 dots -->
+                    </div>
+                    <div class="text-center text-[10px] text-gray-500">64-CHANNEL ELECTRODE ARRAY</div>
+                </div>
+            </div>
+
+            <!-- Neuromodulation Control (New) -->
+            <div class="bg-black/40 border border-terminal-border rounded p-4">
+                <h3 class="text-sm font-bold text-gray-400 mb-4 flex items-center gap-2">
+                    <i data-lucide="zap"></i> NEUROMODULATION
+                </h3>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-[10px] text-gray-500 block mb-1">TARGET REGION</label>
+                        <select
+                            class="w-full bg-black/50 border border-terminal-border text-white text-xs px-2 py-1.5 rounded focus:outline-none focus:border-terminal-green">
+                            <option>Subthalamic Nucleus (STN)</option>
+                            <option>Globus Pallidus (GPi)</option>
+                            <option>Motor Cortex (M1)</option>
+                            <option>Hippocampus (Memory)</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <label class="text-[10px] text-gray-500 block mb-1">FREQ (Hz)</label>
+                            <input type="number" value="130"
+                                class="w-full bg-black/50 border border-terminal-border text-white text-xs px-2 py-1 rounded">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-gray-500 block mb-1">WIDTH (µs)</label>
+                            <input type="number" value="60"
+                                class="w-full bg-black/50 border border-terminal-border text-white text-xs px-2 py-1 rounded">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-gray-500 block mb-1">AMP (mA)</label>
+                            <input type="number" value="2.5" step="0.1"
+                                class="w-full bg-black/50 border border-terminal-border text-white text-xs px-2 py-1 rounded">
+                        </div>
+                    </div>
+
+                    <button id="btn-stimulate"
+                        class="w-full bg-red-500/20 hover:bg-red-500/40 text-red-400 border border-red-500/50 text-xs py-2 rounded font-bold transition-colors flex items-center justify-center gap-2">
+                        <i data-lucide="activity"></i> INITIATE STIMULATION
+                    </button>
+                </div>
+            </div>
+
+            <!-- AI Decoding -->
+            <div class="flex-1 bg-black/40 border border-terminal-border rounded p-4 flex flex-col">
+                <h3 class="text-sm font-bold text-gray-400 mb-2 flex items-center gap-2">
+                    <i data-lucide="sparkles"></i> AI DECODER (GEMINI)
+                </h3>
+                <div class="flex-1 bg-black/50 border border-terminal-border rounded p-3 font-mono text-xs overflow-y-auto"
+                    id="ai-log">
+                    <div class="text-gray-600 mb-2">> System initialized...</div>
+                    <div class="text-gray-600 mb-2">> Waiting for data stream...</div>
+                </div>
+
+                <button id="btn-decode"
+                    class="mt-2 w-full bg-terminal-border hover:bg-white/10 text-white text-xs py-2 rounded transition-colors disabled:opacity-50"
+                    disabled>
+                    RUN COGNITIVE ANALYSIS
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // 1. Initialize Electrode Grid
+        const grid = document.getElementById('electrode-grid');
+        for (let i = 0; i < 64; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'w-full h-full rounded-full bg-gray-800 transition-colors duration-300';
+            dot.id = `elec-${i}`;
+            grid.appendChild(dot);
+        }
+
+        const patientSelect = document.getElementById('neural-patient-select');
+        const statusDot = document.getElementById('connection-status-dot');
+        const statusText = document.getElementById('connection-status-text');
+        const overlay = document.getElementById('eeg-overlay');
+        const decodeBtn = document.getElementById('btn-decode');
+
+        let isConnected = false;
+        let animationFrameId;
+        let dataStreamInterval;
+
+        // Canvas Setup
+        const canvas = document.getElementById('eeg-canvas');
+        const ctx = canvas.getContext('2d');
+        let width = canvas.width = canvas.parentElement.clientWidth;
+        let height = canvas.height = canvas.parentElement.clientHeight;
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = canvas.parentElement.clientWidth;
+            height = canvas.height = canvas.parentElement.clientHeight;
+        });
+
+        // Sim Data
+        const channels = 4;
+        const historySize = 200;
+        const dataHistory = Array(channels).fill().map(() => Array(historySize).fill(0));
+        let t = 0;
+
+        // --- CONNECT / DISCONNECT ---
+        patientSelect.addEventListener('change', (e) => {
+            if (e.target.value) {
+                connect();
+            } else {
+                disconnect();
+            }
+        });
+
+        function connect() {
+            isConnected = true;
+            statusDot.className = "w-2 h-2 rounded-full bg-terminal-green animate-pulse";
+            statusText.innerText = "LINK ESTABLISHED";
+            statusText.className = "text-xs font-mono text-terminal-green";
+            overlay.classList.add('hidden');
+            decodeBtn.disabled = false;
+
+            // Start Loops
+            simulateDataStream();
+            animate();
+            updateMetrics();
+            addLog("> Connection established. Signal locked.");
+        }
+
+        function disconnect() {
+            isConnected = false;
+            statusDot.className = "w-2 h-2 rounded-full bg-red-500 animate-pulse";
+            statusText.innerText = "DISCONNECTED";
+            statusText.className = "text-xs font-mono text-gray-500";
+            overlay.classList.remove('hidden');
+            decodeBtn.disabled = true;
+
+            cancelAnimationFrame(animationFrameId);
+            clearInterval(dataStreamInterval);
+            addLog("> Link severed.");
+        }
+
+        // --- SIMULATION LOOPS ---
+
+        function simulateDataStream() {
+            dataStreamInterval = setInterval(() => {
+                t += 0.1;
+
+                // Generate synthetic EEG (Math.sin stacking)
+                for (let c = 0; c < channels; c++) {
+                    // Shift old data
+                    dataHistory[c].shift();
+
+                    // New sample: Base sine + noise + random spikes
+                    let val = Math.sin(t * (c + 1)) * 20;
+                    val += Math.random() * 10 - 5; // Noise
+                    if (Math.random() > 0.98) val += 50; // Spike
+
+                    dataHistory[c].push(val);
+                }
+
+                // Randomly flash electrodes
+                const randElec = Math.floor(Math.random() * 64);
+                const dot = document.getElementById(`elec-${randElec}`);
+                dot.classList.add('bg-terminal-green');
+                setTimeout(() => dot.classList.remove('bg-terminal-green'), 200);
+
+                // Update Bars randomly
+                document.getElementById('bar-alpha').style.height = `${Math.random() * 80 + 20}%`;
+                document.getElementById('bar-beta').style.height = `${Math.random() * 80 + 20}%`;
+                document.getElementById('bar-delta').style.height = `${Math.random() * 40 + 10}%`;
+                document.getElementById('bar-theta').style.height = `${Math.random() * 60 + 20}%`;
+                document.getElementById('bar-gamma').style.height = `${Math.random() * 30 + 10}%`;
+
+            }, 50); // 20 Hz updates
+        }
+
+        function animate() {
+            if (!isConnected) return;
+
+            ctx.clearRect(0, 0, width, height);
+            ctx.lineWidth = 2;
+
+            const rowHeight = height / channels;
+
+            for (let c = 0; c < channels; c++) {
+                ctx.beginPath();
+                ctx.strokeStyle = c === 0 ? '#3b82f6' : c === 1 ? '#22c55e' : c === 2 ? '#eab308' : '#a855f7';
+
+                let centerY = (c * rowHeight) + (rowHeight / 2);
+
+                for (let i = 0; i < historySize; i++) {
+                    let x = (i / historySize) * width;
+                    let y = centerY + dataHistory[c][i];
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        function updateMetrics() {
+            // Randomly wander metrics
+            setInterval(() => {
+                document.getElementById('metric-battery').innerText = Math.floor(90 + Math.random() * 10) + "%";
+                document.getElementById('metric-temp').innerText = (36.5 + Math.random() * 1.5).toFixed(1) + "°C";
+                document.getElementById('metric-impedance').innerText = (2 + Math.random()).toFixed(1) + " kΩ";
+                document.getElementById('metric-latency').innerText = Math.floor(10 + Math.random() * 5) + " ms";
+            }, 2000);
+        }
+
+        function addLog(msg) {
+            const log = document.getElementById('ai-log');
+            const line = document.createElement('div');
+            line.className = "mb-1";
+            line.innerText = msg;
+            log.appendChild(line);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // --- DECODE BUTTON ---
+        decodeBtn.addEventListener('click', () => {
+            addLog("> Capturing data buffer...");
+            addLog("> Sending to Gemini for decoding...");
+
+            decodeBtn.disabled = true;
+            decodeBtn.innerText = "PROCESSING...";
+
+            // Simulate AI Delay
+            setTimeout(() => {
+                const states = [
+                    "STATE: HIGH FOCUS detected. Beta waves dominant.",
+                    "STATE: DROWSINESS detected. High Delta activity.",
+                    "INTENTION: Motor Cortex activation (Right Hand Grasp).",
+                    "ANOMALY: Transient spike in Temporal Lobe.",
+                    "COGNITIVE LOAD: 85% - Subject requires rest."
+                ];
+                const randState = states[Math.floor(Math.random() * states.length)];
+
+                addLog(`> [AI]: ${randState}`);
+                decodeBtn.disabled = false;
+                decodeBtn.innerText = "RUN COGNITIVE ANALYSIS";
+            }, 1500);
+        });
+        // --- STIMULATE BUTTON ---
+        const stimBtn = document.getElementById('btn-stimulate');
+        if (stimBtn) {
+            stimBtn.addEventListener('click', () => {
+                if (!isConnected) {
+                    alert("Cannot initiate stimulation: Neural Link Disconnected.");
+                    return;
+                }
+
+                addLog("> WARNING: Initiating Deep Brain Stimulation (DBS)...");
+                addLog("> Parameters: 130Hz | 60µs | 2.5mA");
+
+                stimBtn.classList.add('animate-pulse', 'bg-red-600', 'text-white');
+
+                setTimeout(() => {
+                    addLog("> PROTOCOL A-130 EXECUTED. Monitoring response...");
+                    document.getElementById('metric-impedance').innerText = "1.8 kΩ (DROP)";
+                    stimBtn.classList.remove('animate-pulse', 'bg-red-600', 'text-white');
+                }, 1000);
+            });
+        }
+    });
+</script>
+{% endblock %}

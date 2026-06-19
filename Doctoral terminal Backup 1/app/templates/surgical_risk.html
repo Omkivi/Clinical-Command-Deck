@@ -1,0 +1,755 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="h-full flex flex-col bg-terminal-bg text-gray-300 font-mono relative overflow-hidden">
+
+    <!-- BACKGROUND -->
+    <div class="absolute inset-0 pointer-events-none opacity-20" style="background-image: linear-gradient(rgba(0, 255, 0, 0.05) 1px, transparent 1px), 
+         linear-gradient(90deg, rgba(0, 255, 0, 0.05) 1px, transparent 1px); 
+         background-size: 30px 30px;">
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="mainInterface" class="flex-col h-full hidden">
+
+        <!-- HEADER -->
+        <div class="relative z-10 border-b border-white/5 bg-black/60 backdrop-blur-md p-4">
+            <div class="max-w-[1800px] mx-auto flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <div
+                        class="w-10 h-10 rounded-lg bg-terminal-green/10 border border-terminal-green/30 flex items-center justify-center">
+                        <i data-lucide="shield-check" class="w-5 h-5 text-terminal-green"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-white tracking-wide">SURGICAL RISK STRATIFICATION</h1>
+                        <div class="text-xs text-gray-500">Pre-operative Risk Assessment System</div>
+                    </div>
+                </div>
+
+                <!-- PATIENT BADGE -->
+                <div class="flex items-center gap-4 bg-white/5 border border-white/10 px-5 py-2 rounded-full">
+                    <div class="w-8 h-8 rounded-full bg-terminal-green/20 flex items-center justify-center">
+                        <span class="text-terminal-green font-bold text-sm" id="patientInitial">?</span>
+                    </div>
+                    <div>
+                        <div class="text-sm font-bold text-white" id="headerPatientName">Loading...</div>
+                        <div class="text-xs text-gray-500" id="headerPatientMeta">-- yrs • --</div>
+                    </div>
+                    <i data-lucide="lock" class="w-4 h-4 text-terminal-green ml-2"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-auto custom-scrollbar p-4">
+            <div class="max-w-[1800px] mx-auto grid grid-cols-12 gap-4">
+
+                <!-- LEFT COLUMN: PATIENT PROFILE & INPUTS -->
+                <div class="col-span-12 lg:col-span-3 space-y-4">
+
+                    <!-- PATIENT PROFILE SUMMARY -->
+                    <div class="bg-black/40 border border-white/10 rounded-lg overflow-hidden">
+                        <div class="px-4 py-2 bg-white/5 border-b border-white/10">
+                            <div class="text-xs text-terminal-green font-bold tracking-widest flex items-center gap-2">
+                                <i data-lucide="user" class="w-3 h-3"></i> PATIENT PROFILE
+                            </div>
+                        </div>
+                        <div class="p-4 space-y-3" id="patientProfileSection">
+                            <div class="text-gray-500 text-sm">Loading patient data...</div>
+                        </div>
+                    </div>
+
+                    <!-- VITALS -->
+                    <div class="bg-black/40 border border-white/10 rounded-lg overflow-hidden">
+                        <div class="px-4 py-2 bg-white/5 border-b border-white/10">
+                            <div class="text-xs text-terminal-green font-bold tracking-widest flex items-center gap-2">
+                                <i data-lucide="activity" class="w-3 h-3"></i> CURRENT VITALS
+                            </div>
+                        </div>
+                        <div class="p-4" id="vitalsSection">
+                            <div class="text-gray-500 text-sm">No vitals data</div>
+                        </div>
+                    </div>
+
+                    <!-- MEDICATIONS & ALLERGIES -->
+                    <div class="bg-black/40 border border-white/10 rounded-lg overflow-hidden">
+                        <div class="px-4 py-2 bg-white/5 border-b border-white/10">
+                            <div class="text-xs text-terminal-green font-bold tracking-widest flex items-center gap-2">
+                                <i data-lucide="pill" class="w-3 h-3"></i> MEDICATIONS & ALLERGIES
+                            </div>
+                        </div>
+                        <div class="p-4" id="medsAllergySection">
+                            <div class="text-gray-500 text-sm">No data</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CENTER: PROCEDURE CONFIG -->
+                <div class="col-span-12 lg:col-span-3 space-y-4">
+
+                    <div class="bg-black/40 border border-white/10 rounded-lg overflow-hidden">
+                        <div class="px-4 py-2 bg-white/5 border-b border-white/10">
+                            <div class="text-xs text-terminal-green font-bold tracking-widest flex items-center gap-2">
+                                <i data-lucide="settings" class="w-3 h-3"></i> PROCEDURE CONFIG
+                            </div>
+                        </div>
+                        <div class="p-4 space-y-4">
+
+                            <!-- SPECIALTY -->
+                            <div>
+                                <label class="text-xs text-gray-500 block mb-1">Specialty</label>
+                                <select id="surgeryCategory" onchange="updateSurgeryTypes()"
+                                    class="w-full bg-black border border-white/10 px-3 py-2 text-white text-sm rounded focus:border-terminal-green outline-none">
+                                    <option value="">Select specialty...</option>
+                                    <option value="cardiac">Cardiac</option>
+                                    <option value="vascular">Vascular</option>
+                                    <option value="thoracic">Thoracic</option>
+                                    <option value="general">General</option>
+                                    <option value="orthopedic">Orthopedic</option>
+                                    <option value="neuro">Neurosurgery</option>
+                                    <option value="urology">Urology</option>
+                                    <option value="gynecology">Gynecology</option>
+                                    <option value="ent">ENT</option>
+                                    <option value="plastic">Plastic</option>
+                                    <option value="transplant">Transplant</option>
+                                    <option value="other">Other / Custom</option>
+                                </select>
+                            </div>
+
+                            <!-- PROCEDURE (Dropdown) -->
+                            <div id="procedureDropdownSection">
+                                <label class="text-xs text-gray-500 block mb-1">Procedure</label>
+                                <select id="surgeryType"
+                                    class="w-full bg-black border border-white/10 px-3 py-2 text-white text-sm rounded focus:border-terminal-green outline-none">
+                                    <option value="">Select specialty first...</option>
+                                </select>
+                            </div>
+
+                            <!-- CUSTOM PROCEDURE (Text Input) -->
+                            <div id="customProcedureSection" class="hidden">
+                                <label class="text-xs text-gray-500 block mb-1">Custom Procedure</label>
+                                <input type="text" id="customSurgeryName"
+                                    placeholder="e.g., Whipple with portal vein resection"
+                                    class="w-full bg-black border border-white/10 px-3 py-2 text-white text-sm rounded focus:border-terminal-green outline-none mb-2">
+                                <textarea id="customSurgeryDescription"
+                                    placeholder="Describe the procedure, approach, and any special considerations..."
+                                    rows="3"
+                                    class="w-full bg-black border border-white/10 px-3 py-2 text-white text-sm rounded focus:border-terminal-green outline-none resize-none"></textarea>
+                                <div class="mt-2">
+                                    <label class="text-xs text-gray-500 block mb-1">Estimated Risk Level</label>
+                                    <div class="grid grid-cols-3 gap-1">
+                                        <button type="button" onclick="setCustomRisk('low')" data-customrisk="low"
+                                            class="customrisk-btn bg-green-500/20 border border-green-500/50 text-green-400 py-1 rounded text-xs">LOW</button>
+                                        <button type="button" onclick="setCustomRisk('moderate')"
+                                            data-customrisk="moderate"
+                                            class="customrisk-btn bg-white/5 border border-white/10 text-gray-400 py-1 rounded text-xs">MODERATE</button>
+                                        <button type="button" onclick="setCustomRisk('high')" data-customrisk="high"
+                                            class="customrisk-btn bg-white/5 border border-white/10 text-gray-400 py-1 rounded text-xs">HIGH</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- DURATION -->
+                            <div>
+                                <label class="text-xs text-gray-500 block mb-1">Est. Duration</label>
+                                <div class="flex gap-2">
+                                    <input type="number" id="surgeryDuration" value="2" step="0.5" min="0.5" max="16"
+                                        class="flex-1 bg-black border border-white/10 px-3 py-2 text-white text-sm rounded focus:border-terminal-green outline-none">
+                                    <span
+                                        class="bg-white/5 border border-white/10 px-3 py-2 rounded text-gray-500 text-sm">hrs</span>
+                                </div>
+                            </div>
+
+                            <!-- ANESTHESIA -->
+                            <div>
+                                <label class="text-xs text-gray-500 block mb-1">Anesthesia</label>
+                                <select id="anesthesiaType"
+                                    class="w-full bg-black border border-white/10 px-3 py-2 text-white text-sm rounded focus:border-terminal-green outline-none">
+                                    <option value="general">General</option>
+                                    <option value="regional">Regional/Spinal</option>
+                                    <option value="local">Local + Sedation</option>
+                                    <option value="mac">MAC</option>
+                                </select>
+                            </div>
+
+                            <!-- URGENCY -->
+                            <div>
+                                <label class="text-xs text-gray-500 block mb-1">Urgency</label>
+                                <div class="grid grid-cols-3 gap-1">
+                                    <button type="button" onclick="setUrgency('elective')" data-urgency="elective"
+                                        class="urgency-btn bg-green-500/20 border border-green-500/50 text-green-400 py-1.5 rounded text-xs font-bold">ELECTIVE</button>
+                                    <button type="button" onclick="setUrgency('urgent')" data-urgency="urgent"
+                                        class="urgency-btn bg-white/5 border border-white/10 text-gray-400 py-1.5 rounded text-xs font-bold">URGENT</button>
+                                    <button type="button" onclick="setUrgency('emergent')" data-urgency="emergent"
+                                        class="urgency-btn bg-white/5 border border-white/10 text-gray-400 py-1.5 rounded text-xs font-bold">EMERG</button>
+                                </div>
+                            </div>
+
+                            <!-- BLOOD LOSS -->
+                            <div>
+                                <label class="text-xs text-gray-500 block mb-1">Expected Blood Loss</label>
+                                <select id="bloodLoss"
+                                    class="w-full bg-black border border-white/10 px-3 py-2 text-white text-sm rounded focus:border-terminal-green outline-none">
+                                    <option value="minimal">Minimal (&lt;250 mL)</option>
+                                    <option value="moderate">Moderate (250-500 mL)</option>
+                                    <option value="significant">Significant (500-1000 mL)</option>
+                                    <option value="major">Major (&gt;1000 mL)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="p-4 border-t border-white/10">
+                            <button onclick="calculateRisk()"
+                                class="w-full bg-terminal-green text-black font-bold py-3 rounded hover:bg-green-400 transition flex items-center justify-center gap-2">
+                                <i data-lucide="calculator" class="w-4 h-4"></i> ASSESS RISK
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- RISK FACTORS IDENTIFIED -->
+                    <div class="bg-black/40 border border-white/10 rounded-lg overflow-hidden">
+                        <div class="px-4 py-2 bg-red-500/10 border-b border-red-500/20">
+                            <div class="text-xs text-red-400 font-bold tracking-widest flex items-center gap-2">
+                                <i data-lucide="alert-triangle" class="w-3 h-3"></i> RISK FACTORS
+                            </div>
+                        </div>
+                        <div class="p-4" id="riskFactorsPanel">
+                            <div class="text-gray-500 text-sm italic">Run assessment to identify...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT: RESULTS -->
+                <div class="col-span-12 lg:col-span-6">
+
+                    <!-- Zero State -->
+                    <div id="zeroState"
+                        class="bg-white/5 border border-dashed border-white/10 rounded-lg flex flex-col items-center justify-center p-16">
+                        <i data-lucide="shield-check" class="w-16 h-16 text-white opacity-20 mb-4"></i>
+                        <div class="text-lg text-white mb-2">Configure Procedure</div>
+                        <div class="text-sm text-gray-500">Select specialty and procedure to calculate risk</div>
+                    </div>
+
+                    <!-- Results -->
+                    <div id="resultsContainer" class="hidden space-y-4"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ERROR STATE -->
+    <div id="errorState" class="hidden h-full flex flex-col items-center justify-center text-center p-8">
+        <div
+            class="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mb-6 border border-red-500/30">
+            <i data-lucide="shield-alert" class="w-10 h-10 text-red-500"></i>
+        </div>
+        <h1 class="text-2xl font-bold text-white mb-2">ACCESS DENIED</h1>
+        <p class="text-red-400 text-sm mb-6">No patient context detected</p>
+        <a href="/patients"
+            class="bg-white/10 text-white px-6 py-3 rounded border border-white/20 hover:bg-white/20 transition">Return
+            to Directory</a>
+    </div>
+</div>
+
+<script>
+    let currentPatient = null;
+    let selectedUrgency = 'elective';
+    let customRiskLevel = 'low';
+
+    // SURGERY DATABASE
+    const surgeryDatabase = {
+        cardiac: [
+            { value: 'CABG', label: 'CABG', risk: 'high' },
+            { value: 'Valve Replacement', label: 'Valve Replacement', risk: 'high' },
+            { value: 'Aortic Root', label: 'Aortic Root Replacement', risk: 'high' },
+            { value: 'Heart Transplant', label: 'Heart Transplant', risk: 'high' },
+            { value: 'LVAD', label: 'LVAD Implantation', risk: 'high' }
+        ],
+        vascular: [
+            { value: 'AAA Open', label: 'AAA Open Repair', risk: 'high' },
+            { value: 'AAA EVAR', label: 'AAA EVAR', risk: 'moderate' },
+            { value: 'Carotid Endarterectomy', label: 'Carotid Endarterectomy', risk: 'moderate' },
+            { value: 'Peripheral Bypass', label: 'Peripheral Bypass', risk: 'moderate' },
+            { value: 'AV Fistula', label: 'AV Fistula', risk: 'low' }
+        ],
+        thoracic: [
+            { value: 'Lobectomy', label: 'Lobectomy', risk: 'moderate' },
+            { value: 'Pneumonectomy', label: 'Pneumonectomy', risk: 'high' },
+            { value: 'VATS', label: 'VATS', risk: 'low' },
+            { value: 'Esophagectomy', label: 'Esophagectomy', risk: 'high' }
+        ],
+        general: [
+            { value: 'Cholecystectomy', label: 'Cholecystectomy', risk: 'low' },
+            { value: 'Appendectomy', label: 'Appendectomy', risk: 'low' },
+            { value: 'Hernia Repair', label: 'Hernia Repair', risk: 'low' },
+            { value: 'Colectomy', label: 'Colectomy', risk: 'moderate' },
+            { value: 'Whipple', label: 'Whipple Procedure', risk: 'high' },
+            { value: 'Bariatric', label: 'Bariatric Surgery', risk: 'moderate' },
+            { value: 'Hepatectomy', label: 'Hepatectomy', risk: 'high' }
+        ],
+        orthopedic: [
+            { value: 'Total Hip', label: 'Total Hip Replacement', risk: 'moderate' },
+            { value: 'Total Knee', label: 'Total Knee Replacement', risk: 'moderate' },
+            { value: 'Spine Fusion', label: 'Spinal Fusion', risk: 'moderate' },
+            { value: 'Hip Fracture', label: 'Hip Fracture Repair', risk: 'moderate' },
+            { value: 'Amputation', label: 'Amputation', risk: 'moderate' }
+        ],
+        neuro: [
+            { value: 'Craniotomy Tumor', label: 'Craniotomy - Tumor', risk: 'high' },
+            { value: 'Craniotomy Aneurysm', label: 'Craniotomy - Aneurysm', risk: 'high' },
+            { value: 'VP Shunt', label: 'VP Shunt', risk: 'low' },
+            { value: 'DBS', label: 'Deep Brain Stimulation', risk: 'moderate' }
+        ],
+        urology: [
+            { value: 'Radical Prostatectomy', label: 'Radical Prostatectomy', risk: 'moderate' },
+            { value: 'Nephrectomy', label: 'Nephrectomy', risk: 'moderate' },
+            { value: 'Cystectomy', label: 'Radical Cystectomy', risk: 'high' },
+            { value: 'TURP', label: 'TURP', risk: 'low' }
+        ],
+        gynecology: [
+            { value: 'Hysterectomy', label: 'Hysterectomy', risk: 'moderate' },
+            { value: 'Myomectomy', label: 'Myomectomy', risk: 'moderate' },
+            { value: 'Debulking', label: 'Ovarian Cancer Debulking', risk: 'high' }
+        ],
+        ent: [
+            { value: 'Thyroidectomy', label: 'Thyroidectomy', risk: 'low' },
+            { value: 'Laryngectomy', label: 'Laryngectomy', risk: 'moderate' },
+            { value: 'Neck Dissection', label: 'Neck Dissection', risk: 'moderate' }
+        ],
+        plastic: [
+            { value: 'Free Flap', label: 'Free Flap Reconstruction', risk: 'moderate' },
+            { value: 'Mastectomy Recon', label: 'Breast Reconstruction', risk: 'moderate' }
+        ],
+        transplant: [
+            { value: 'Liver Transplant', label: 'Liver Transplant', risk: 'high' },
+            { value: 'Kidney Transplant', label: 'Kidney Transplant', risk: 'high' },
+            { value: 'Heart Transplant', label: 'Heart Transplant', risk: 'high' },
+            { value: 'Lung Transplant', label: 'Lung Transplant', risk: 'high' }
+        ]
+    };
+
+    function updateSurgeryTypes() {
+        var category = document.getElementById('surgeryCategory').value;
+        var select = document.getElementById('surgeryType');
+        var dropdownSection = document.getElementById('procedureDropdownSection');
+        var customSection = document.getElementById('customProcedureSection');
+
+        // Show/hide custom section
+        if (category === 'other') {
+            dropdownSection.classList.add('hidden');
+            customSection.classList.remove('hidden');
+        } else {
+            dropdownSection.classList.remove('hidden');
+            customSection.classList.add('hidden');
+
+            select.innerHTML = '<option value="">Select procedure...</option>';
+            if (category && surgeryDatabase[category]) {
+                surgeryDatabase[category].forEach(function (proc) {
+                    var opt = document.createElement('option');
+                    opt.value = proc.value;
+                    opt.textContent = proc.label;
+                    select.appendChild(opt);
+                });
+            }
+        }
+    }
+
+    function setCustomRisk(level) {
+        customRiskLevel = level;
+        document.querySelectorAll('.customrisk-btn').forEach(function (btn) {
+            btn.className = 'customrisk-btn bg-white/5 border border-white/10 text-gray-400 py-1 rounded text-xs';
+        });
+
+        var activeBtn = document.querySelector('[data-customrisk="' + level + '"]');
+        if (level === 'low') activeBtn.className = 'customrisk-btn bg-green-500/20 border border-green-500/50 text-green-400 py-1 rounded text-xs';
+        if (level === 'moderate') activeBtn.className = 'customrisk-btn bg-yellow-500/20 border border-yellow-500/50 text-yellow-400 py-1 rounded text-xs';
+        if (level === 'high') activeBtn.className = 'customrisk-btn bg-red-500/20 border border-red-500/50 text-red-400 py-1 rounded text-xs';
+    }
+
+    function setUrgency(level) {
+        selectedUrgency = level;
+        document.querySelectorAll('.urgency-btn').forEach(function (btn) {
+            btn.className = 'urgency-btn bg-white/5 border border-white/10 text-gray-400 py-1.5 rounded text-xs font-bold';
+        });
+
+        var activeBtn = document.querySelector('[data-urgency="' + level + '"]');
+        if (level === 'elective') activeBtn.className = 'urgency-btn bg-green-500/20 border border-green-500/50 text-green-400 py-1.5 rounded text-xs font-bold';
+        if (level === 'urgent') activeBtn.className = 'urgency-btn bg-yellow-500/20 border border-yellow-500/50 text-yellow-400 py-1.5 rounded text-xs font-bold';
+        if (level === 'emergent') activeBtn.className = 'urgency-btn bg-red-500/20 border border-red-500/50 text-red-400 py-1.5 rounded text-xs font-bold';
+    }
+
+    async function initPage() {
+        var urlParams = new URLSearchParams(window.location.search);
+        var patientId = urlParams.get('patient_id');
+
+        if (patientId) {
+            try {
+                var res = await fetch('/api/patients/' + patientId);
+                if (!res.ok) throw new Error("Not found");
+
+                currentPatient = await res.json();
+
+                document.getElementById('mainInterface').classList.remove('hidden');
+                document.getElementById('mainInterface').classList.add('flex');
+
+                // Header
+                document.getElementById('headerPatientName').innerText = currentPatient.name;
+                document.getElementById('headerPatientMeta').innerText = currentPatient.age + ' yrs • ' + currentPatient.sex;
+                document.getElementById('patientInitial').innerText = currentPatient.name.charAt(0).toUpperCase();
+
+                // Render patient panels
+                renderPatientProfile();
+                renderVitals();
+                renderMedsAllergies();
+
+            } catch (e) {
+                showError();
+            }
+        } else {
+            showError();
+        }
+    }
+
+    function renderPatientProfile() {
+        var html = '<div class="grid grid-cols-2 gap-3 text-sm">';
+        html += '<div><div class="text-xs text-gray-500">Age</div><div class="text-white">' + currentPatient.age + ' yrs</div></div>';
+        html += '<div><div class="text-xs text-gray-500">Sex</div><div class="text-white">' + currentPatient.sex + '</div></div>';
+        html += '<div><div class="text-xs text-gray-500">Weight</div><div class="text-white">' + (currentPatient.weight || '--') + ' kg</div></div>';
+        html += '<div><div class="text-xs text-gray-500">Height</div><div class="text-white">' + (currentPatient.height || '--') + ' cm</div></div>';
+        html += '<div><div class="text-xs text-gray-500">BMI</div><div class="text-white">' + (currentPatient.bmi || '--') + '</div></div>';
+        html += '<div><div class="text-xs text-gray-500">BSA</div><div class="text-white">' + (currentPatient.bsa || '--') + ' m²</div></div>';
+        html += '</div>';
+
+        // Conditions
+        html += '<div class="mt-3 pt-3 border-t border-white/10">';
+        html += '<div class="text-xs text-gray-500 mb-1">Condition</div>';
+        html += '<div class="text-white text-sm">' + (currentPatient.condition || 'None') + '</div>';
+        html += '</div>';
+
+        // Organ function
+        html += '<div class="mt-3 pt-3 border-t border-white/10 grid grid-cols-2 gap-3 text-sm">';
+        var renalColor = currentPatient.renal_function === 'Normal' ? 'green' : (currentPatient.renal_function.includes('Mild') ? 'yellow' : 'red');
+        var hepaticColor = currentPatient.hepatic_function === 'Normal' ? 'green' : (currentPatient.hepatic_function.includes('Mild') ? 'yellow' : 'red');
+        html += '<div><div class="text-xs text-gray-500">Renal</div><div class="text-' + renalColor + '-400">' + (currentPatient.renal_function || 'Normal') + '</div></div>';
+        html += '<div><div class="text-xs text-gray-500">Hepatic</div><div class="text-' + hepaticColor + '-400">' + (currentPatient.hepatic_function || 'Normal') + '</div></div>';
+        html += '</div>';
+
+        document.getElementById('patientProfileSection').innerHTML = html;
+    }
+
+    function renderVitals() {
+        var v = currentPatient.vitals || {};
+        var html = '<div class="grid grid-cols-3 gap-2 text-center">';
+
+        // BP
+        var bpHigh = v.bp_systolic > 140 || v.bp_diastolic > 90;
+        html += '<div class="bg-black/30 p-2 rounded border border-white/5">';
+        html += '<div class="text-lg font-bold ' + (bpHigh ? 'text-red-400' : 'text-white') + '">' + (v.bp_systolic || '--') + '/' + (v.bp_diastolic || '--') + '</div>';
+        html += '<div class="text-xs text-gray-500">BP</div>';
+        html += '</div>';
+
+        // HR
+        var hrAbn = v.heart_rate < 60 || v.heart_rate > 100;
+        html += '<div class="bg-black/30 p-2 rounded border border-white/5">';
+        html += '<div class="text-lg font-bold ' + (hrAbn ? 'text-yellow-400' : 'text-white') + '">' + (v.heart_rate || '--') + '</div>';
+        html += '<div class="text-xs text-gray-500">HR</div>';
+        html += '</div>';
+
+        // SpO2
+        var spO2Low = v.spO2 < 95;
+        html += '<div class="bg-black/30 p-2 rounded border border-white/5">';
+        html += '<div class="text-lg font-bold ' + (spO2Low ? 'text-red-400' : 'text-white') + '">' + (v.spO2 || '--') + '%</div>';
+        html += '<div class="text-xs text-gray-500">SpO2</div>';
+        html += '</div>';
+
+        html += '</div>';
+
+        // Temp
+        html += '<div class="mt-2 text-xs text-gray-500 text-center">Temp: ' + (v.temp || '--') + '°F</div>';
+
+        document.getElementById('vitalsSection').innerHTML = html;
+    }
+
+    function renderMedsAllergies() {
+        var html = '';
+
+        // Allergies
+        var allergies = currentPatient.allergies || ['None'];
+        var hasAllergy = allergies.length > 0 && allergies[0] !== 'None';
+        html += '<div class="mb-3">';
+        html += '<div class="text-xs text-gray-500 mb-1">Allergies</div>';
+        if (hasAllergy) {
+            html += '<div class="flex flex-wrap gap-1">';
+            allergies.forEach(function (a) {
+                html += '<span class="bg-red-500/20 text-red-400 px-2 py-0.5 rounded text-xs">' + a + '</span>';
+            });
+            html += '</div>';
+        } else {
+            html += '<div class="text-green-400 text-sm">NKDA</div>';
+        }
+        html += '</div>';
+
+        // Current Meds
+        var meds = currentPatient.current_medications || [];
+        html += '<div class="border-t border-white/10 pt-3">';
+        html += '<div class="text-xs text-gray-500 mb-1">Current Medications (' + meds.length + ')</div>';
+        if (meds.length > 0) {
+            html += '<div class="space-y-1 max-h-24 overflow-auto custom-scrollbar">';
+            meds.forEach(function (m) {
+                html += '<div class="text-sm text-white">' + m.name + ' <span class="text-gray-500 text-xs">(' + (m.class || '') + ')</span></div>';
+            });
+            html += '</div>';
+        } else {
+            html += '<div class="text-gray-500 text-sm">None</div>';
+        }
+        html += '</div>';
+
+        document.getElementById('medsAllergySection').innerHTML = html;
+    }
+
+    function showError() {
+        document.getElementById('mainInterface').classList.add('hidden');
+        document.getElementById('errorState').classList.remove('hidden');
+    }
+
+    async function calculateRisk() {
+        if (!currentPatient) return;
+
+        var surgeryCategory = document.getElementById('surgeryCategory').value;
+        var surgeryType = document.getElementById('surgeryType').value;
+        var customName = document.getElementById('customSurgeryName').value;
+        var customDescription = document.getElementById('customSurgeryDescription').value;
+
+        var duration = parseFloat(document.getElementById('surgeryDuration').value);
+        var anesthesia = document.getElementById('anesthesiaType').value;
+        var bloodLoss = document.getElementById('bloodLoss').value;
+
+        // Validation for Custom vs Standard
+        if (surgeryCategory === 'other') {
+            if (!customName) { alert('Please enter the custom procedure name.'); return; }
+            surgeryType = customName; // Override with custom name
+        } else {
+            if (!surgeryType) { alert('Please select a procedure.'); return; }
+        }
+
+        var container = document.getElementById('resultsContainer');
+        var zeroState = document.getElementById('zeroState');
+
+        zeroState.classList.add('hidden');
+        container.classList.remove('hidden');
+        container.innerHTML = '<div class="text-terminal-green animate-pulse text-center p-12 bg-white/5 rounded-lg border border-white/10">Analyzing patient data and calculating risk...</div>';
+
+        try {
+            var payload = {
+                patient_id: currentPatient.id,
+                surgery_type: surgeryType,
+                surgery_duration_hours: duration,
+                anesthesia_type: anesthesia,
+                urgency: selectedUrgency,
+                expected_blood_loss: bloodLoss
+            };
+
+            // Add custom data if applicable
+            if (surgeryCategory === 'other') {
+                payload.is_custom = true;
+                payload.custom_description = customDescription;
+                payload.custom_risk_level = customRiskLevel; // 'low', 'moderate', 'high'
+            }
+
+            var res = await fetch('/api/surgical-risk-assessment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                let errText;
+                try {
+                    // Clone the response so we can try JSON first, then text if it fails
+                    const clonedRes = res.clone();
+                    try {
+                        const errJson = await clonedRes.json();
+                        errText = errJson.error || errJson.message || JSON.stringify(errJson);
+                    } catch (jsonErr) {
+                        // JSON parsing failed, try reading as text from original response
+                        errText = await res.text();
+                        if (errText.includes('<!doctype html>') || errText.includes('<!DOCTYPE html>')) {
+                            errText = "Internal Server Error (Check logs)";
+                        }
+                    }
+                } catch (e) {
+                    errText = `HTTP Error ${res.status}`;
+                }
+                throw new Error(errText || `HTTP Error ${res.status}`);
+            }
+
+            var data = await res.json();
+            renderResults(data);
+            renderRiskFactors(data);
+        } catch (e) {
+            console.error(e);
+            let errorMsg = e.message || "Unknown error";
+            if (e.message && e.message.includes('JSON')) {
+                errorMsg = "Server returned invalid response (500 Internal Server Error)";
+            }
+            container.innerHTML = `<div class="bg-red-500/10 border border-red-500/50 p-6 rounded-lg text-center">
+                <div class="text-red-500 font-bold mb-2">RISK CALCULATION FAILED</div>
+                <div class="text-xs text-red-400 font-mono">${errorMsg}</div>
+                <button onclick="calculateRisk()" class="mt-4 bg-red-500/20 hover:bg-red-500/40 text-red-300 text-xs px-4 py-2 rounded">Retry</button>
+            </div>`;
+        }
+    }
+
+    function renderRiskFactors(data) {
+        var factors = data.cardiac_risk && data.cardiac_risk.risk_factors ? data.cardiac_risk.risk_factors : [];
+        var html = '';
+
+        if (factors.length === 0) {
+            html = '<div class="text-green-400 text-sm flex items-center gap-2"><i data-lucide="check" class="w-4 h-4"></i> No significant factors</div>';
+        } else {
+            html = '<div class="space-y-2">';
+            factors.forEach(function (f) {
+                html += '<div class="flex items-start gap-2 text-sm text-red-300"><span class="w-1.5 h-1.5 rounded-full bg-red-400 mt-1.5 shrink-0"></span>' + f + '</div>';
+            });
+            html += '</div>';
+        }
+
+        document.getElementById('riskFactorsPanel').innerHTML = html;
+        lucide.createIcons();
+    }
+
+    function renderResults(data) {
+        var container = document.getElementById('resultsContainer');
+        var riskLevel = data.overall_risk_category;
+        var isHigh = riskLevel === 'High' || riskLevel === 'Very High';
+        var isMod = riskLevel === 'Moderate';
+        var riskColor = isHigh ? 'red' : (isMod ? 'yellow' : 'green');
+
+        // Recommendation
+        var rec, recIcon;
+        if (isHigh) { rec = 'DELAY RECOMMENDED - Optimize patient'; recIcon = 'alert-triangle'; }
+        else if (isMod) { rec = 'PROCEED WITH CAUTION'; recIcon = 'alert-circle'; }
+        else { rec = 'CLEARED FOR SURGERY'; recIcon = 'check-circle'; }
+
+        var html = '';
+
+        // RECOMMENDATION BANNER
+        html += '<div class="bg-' + riskColor + '-500/10 border border-' + riskColor + '-500/50 p-4 rounded-lg flex items-center gap-4">';
+        html += '<div class="w-10 h-10 rounded-full bg-' + riskColor + '-500/20 flex items-center justify-center shrink-0"><i data-lucide="' + recIcon + '" class="w-5 h-5 text-' + riskColor + '-400"></i></div>';
+        html += '<div>';
+        html += '<div class="text-xs text-' + riskColor + '-400 uppercase tracking-widest mb-0.5">Clinical Recommendation</div>';
+        html += '<div class="text-white font-bold">' + rec + '</div>';
+        html += '</div>';
+        html += '</div>';
+
+        // MAIN SCORES
+        html += '<div class="grid grid-cols-4 gap-3">';
+
+        // Overall
+        html += '<div class="bg-' + riskColor + '-500/10 border border-' + riskColor + '-500/30 p-4 rounded-lg text-center">';
+        html += '<div class="text-3xl font-bold text-' + riskColor + '-400">' + riskLevel.toUpperCase() + '</div>';
+        html += '<div class="text-xs text-gray-500 mt-1">Overall Risk</div>';
+        html += '</div>';
+
+        // ASA
+        html += '<div class="bg-white/5 border border-white/10 p-4 rounded-lg text-center">';
+        html += '<div class="text-3xl font-bold text-white">ASA ' + data.asa_classification.asa_score + '</div>';
+        html += '<div class="text-xs text-gray-500 mt-1">Physical Status</div>';
+        html += '</div>';
+
+        // RCRI
+        html += '<div class="bg-white/5 border border-white/10 p-4 rounded-lg text-center">';
+        html += '<div class="text-3xl font-bold text-white">' + data.cardiac_risk.rcri_score + '</div>';
+        html += '<div class="text-xs text-gray-500 mt-1">RCRI Points</div>';
+        html += '</div>';
+
+        // ICU
+        html += '<div class="bg-white/5 border border-white/10 p-4 rounded-lg text-center">';
+        html += '<div class="text-3xl font-bold text-white">' + data.icu_prediction.icu_admission_probability + '%</div>';
+        html += '<div class="text-xs text-gray-500 mt-1">ICU Probability</div>';
+        html += '</div>';
+
+        html += '</div>';
+
+        // DETAILS
+        html += '<div class="grid grid-cols-2 gap-4">';
+
+        // ASA Details
+        html += '<div class="bg-white/5 border border-white/10 p-4 rounded-lg">';
+        html += '<div class="text-xs text-terminal-green uppercase tracking-widest mb-3">ASA Classification</div>';
+        html += '<div class="text-white text-sm mb-2">' + data.asa_classification.asa_description + '</div>';
+        html += '<div class="text-xs text-yellow-400">Mortality Risk: ' + data.asa_classification.mortality_risk + '</div>';
+        html += '</div>';
+
+        // Cardiac Details
+        html += '<div class="bg-white/5 border border-white/10 p-4 rounded-lg">';
+        html += '<div class="text-xs text-terminal-green uppercase tracking-widest mb-3">Cardiac Risk (RCRI)</div>';
+        html += '<div class="text-white text-sm mb-2">Category: ' + data.cardiac_risk.risk_category + '</div>';
+        html += '<div class="text-xs text-' + (data.cardiac_risk.cardiac_event_risk_percent > 5 ? 'red' : 'yellow') + '-400">MACE Risk: ' + data.cardiac_risk.cardiac_event_risk_percent + '%</div>';
+        html += '</div>';
+
+        html += '</div>';
+
+        // NSQIP
+        if (data.nsqip_predictions) {
+            html += '<div class="bg-white/5 border border-white/10 p-4 rounded-lg">';
+            html += '<div class="text-xs text-terminal-green uppercase tracking-widest mb-3">30-Day Complication Forecast</div>';
+            html += '<div class="grid grid-cols-4 gap-3">';
+
+            var nsqip = [
+                { label: 'Any Compl.', value: data.nsqip_predictions.any_complication },
+                { label: 'Serious', value: data.nsqip_predictions.serious_complication },
+                { label: 'Cardiac', value: data.nsqip_predictions.cardiac_complication },
+                { label: 'SSI', value: data.nsqip_predictions.surgical_site_infection },
+                { label: 'Pneumonia', value: data.nsqip_predictions.pneumonia },
+                { label: 'Renal', value: data.nsqip_predictions.renal_failure || '1.2' },
+                { label: 'Readmit', value: data.nsqip_predictions.readmission || '5' },
+                { label: 'Mortality', value: data.nsqip_predictions.death_30day }
+            ];
+
+            nsqip.forEach(function (item) {
+                html += '<div class="bg-black/30 p-2 rounded text-center">';
+                html += '<div class="text-lg font-bold text-white">' + item.value + '%</div>';
+                html += '<div class="text-xs text-gray-500">' + item.label + '</div>';
+                html += '</div>';
+            });
+
+            html += '</div>';
+            html += '</div>';
+        }
+
+        // ICU Details
+        html += '<div class="bg-terminal-green/10 border border-terminal-green/30 p-4 rounded-lg flex justify-between items-center">';
+        html += '<div>';
+        html += '<div class="text-xs text-terminal-green uppercase tracking-widest mb-1">ICU Admission</div>';
+        html += '<div class="text-white font-bold">' + data.icu_prediction.icu_level + '</div>';
+        html += '</div>';
+        html += '<div class="text-right">';
+        html += '<div class="text-xs text-gray-500">Est. LOS</div>';
+        html += '<div class="text-xl font-bold text-white">' + data.icu_prediction.estimated_los_days + '</div>';
+        html += '</div>';
+        html += '</div>';
+
+        // PRE-OP CHECKLIST
+        html += '<div class="bg-white/5 border border-white/10 p-4 rounded-lg">';
+        html += '<div class="text-xs text-terminal-green uppercase tracking-widest mb-3">Pre-operative Checklist</div>';
+        html += '<div class="grid grid-cols-2 gap-2">';
+
+        var preOp = ['CBC, BMP, Coags', 'Type & Screen', 'ECG', 'CXR (if indicated)', 'Cardiology Clearance (if RCRI≥2)', 'NPO Status', 'Informed Consent', 'DVT Prophylaxis Plan'];
+        preOp.forEach(function (item) {
+            html += '<label class="flex items-center gap-2 p-1.5 hover:bg-white/5 rounded cursor-pointer">';
+            html += '<input type="checkbox" class="w-3.5 h-3.5 rounded border-white/30 bg-transparent">';
+            html += '<span class="text-sm text-gray-300">' + item + '</span>';
+            html += '</label>';
+        });
+
+        html += '</div>';
+        html += '</div>';
+
+        container.innerHTML = html;
+        lucide.createIcons();
+    }
+
+    initPage();
+    lucide.createIcons();
+</script>
+{% endblock %}
