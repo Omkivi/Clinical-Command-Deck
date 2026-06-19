@@ -1,6 +1,5 @@
 # Clinical Command Deck - Executive Summary
 
-## 🎯 One-Line Pitch
 > An AI-powered clinical decision support platform using multi-model consensus to eliminate AI bias in healthcare decisions.
 
 ---
@@ -170,5 +169,5 @@ Best features to demonstrate:
 ---
 
 **Contact:** ommahajankivi@gmail.com  
-**Repository:** *(add your GitHub repo URL here)*  
+**Repository:** https://github.com/Omkivi/Clinical-Command-Deck  
 **Demo:** Run `python run.py` and visit `http://localhost:5000`
