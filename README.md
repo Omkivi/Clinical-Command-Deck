@@ -9,7 +9,7 @@
 
 ## What This Is
 
-A production-grade clinical AI system designed to assist in life-critical medical decisions. Unlike single-model AI tools, this system makes four independent AI models assess, debate, and vote on every clinical case — ensuring minority opinions are never silenced in decisions that affect human lives.
+A production-grade clinical AI system designed to assist in life-critical medical decisions. Unlike single-model AI tools, this system makes four independent AI models assess, debate, and vote on every clinical case ensuring minority opinions are never silenced in decisions that affect human lives.
 
 ---
 
